@@ -43,7 +43,7 @@ while [ $# -gt 0 ]; do
       shift
       LOAD_DURATION="${1:?--load-duration requires a value}"
       ;;
-    deploy|load|validate|teardown|benchmark|top|health|all)
+    deploy|load|validate|teardown|benchmark|top|health|diagnose|all)
       COMMAND="$1"
       ;;
     *)
@@ -182,13 +182,17 @@ wait_for_data() {
     fi
 
     if [ $pyroscope_ok -eq 0 ]; then
-      if curl -sf "http://localhost:4040/api/v1/labels" 2>/dev/null | grep -q "service_name" 2>/dev/null; then
+      if curl -sf -X POST -H 'Content-Type: application/json' \
+           -d '{"name":"service_name"}' \
+           "http://localhost:4040/querier.v1.QuerierService/LabelValues" 2>/dev/null \
+           | grep -q "bank-" 2>/dev/null; then
         pyroscope_ok=1
       fi
     fi
 
     if [ $prometheus_ok -eq 0 ]; then
-      if curl -sf "http://localhost:9090/api/v1/query?query=jvm_memory_used_bytes" 2>/dev/null | grep -q '"result":\[{' 2>/dev/null; then
+      if curl -sf "http://localhost:9090/api/v1/query?query=jvm_memory_used_bytes" 2>/dev/null \
+           | grep -q '"result"' 2>/dev/null; then
         prometheus_ok=1
       fi
     fi
@@ -387,9 +391,12 @@ case "$COMMAND" in
   health)
     stage_health
     ;;
+  diagnose)
+    bash "$SCRIPT_DIR/diagnose.sh" "${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"}"
+    ;;
   *)
     echo "Unknown command: $COMMAND"
-    echo "Usage: bash scripts/run.sh [deploy|load|validate|teardown|benchmark|top|health|all] [--verbose] [--log-dir DIR] [--load-duration N]"
+    echo "Usage: bash scripts/run.sh [deploy|load|validate|teardown|benchmark|top|health|diagnose|all] [--verbose] [--log-dir DIR] [--load-duration N]"
     exit 1
     ;;
 esac

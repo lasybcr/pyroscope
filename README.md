@@ -175,6 +175,8 @@ bash scripts/run.sh top                 # top functions by CPU/memory/mutex
 bash scripts/run.sh top cpu             # CPU hotspots only
 bash scripts/run.sh health              # flag problematic JVMs
 bash scripts/run.sh health --json       # JSON output for automation
+bash scripts/run.sh diagnose            # full diagnostic report (no browser needed)
+bash scripts/run.sh diagnose --json     # machine-readable JSON for scripting
 bash scripts/run.sh --load-duration 60  # full pipeline with custom load duration
 ```
 
@@ -264,6 +266,7 @@ Four pre-provisioned dashboards:
 | [docs/runbook.md](docs/runbook.md) | Operations runbook: deploy, verify, incident response, maintenance |
 | [docs/sample-queries.md](docs/sample-queries.md) | Copy-paste queries for Pyroscope, Grafana, Prometheus |
 | [docs/pipeline.md](docs/pipeline.md) | Pipeline stages, data flow, and configuration |
+| [docs/cli-observability.md](docs/cli-observability.md) | CLI observability: diagnose, monitor, and debug without a browser |
 | [docs/dashboard-guide.md](docs/dashboard-guide.md) | Dashboard guide, production debugging runbook, and queries |
 
 ## Project Structure
@@ -294,6 +297,7 @@ pyroscope/
 │       └── handlers/               # 6 additional workload handlers
 ├── scripts/
 │   ├── run.sh                      # Unified pipeline runner (quiet mode + ready banner)
+│   ├── diagnose.sh                 # Full diagnostic report (health + HTTP + profiles + alerts)
 │   ├── top-functions.sh            # Top CPU/memory/mutex functions (Pyroscope API)
 │   ├── jvm-health.sh              # Identify problematic JVMs (Prometheus thresholds)
 │   ├── deploy.sh                   # Build + start + health checks

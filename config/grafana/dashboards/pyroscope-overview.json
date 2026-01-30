@@ -8,14 +8,12 @@
     "list": [
       {
         "name": "application",
-        "type": "query",
-        "datasource": { "type": "grafana-pyroscope-datasource", "uid": "pyroscope-ds" },
-        "query": { "type": "label_values", "label": "service_name", "profileTypeId": "process_cpu:cpu:nanoseconds:cpu:nanoseconds" },
+        "type": "custom",
+        "query": "bank-api-gateway,bank-order-service,bank-payment-service,bank-fraud-service,bank-account-service,bank-loan-service,bank-notification-service",
         "current": { "text": "bank-api-gateway", "value": "bank-api-gateway" },
-        "refresh": 2,
         "includeAll": false,
         "multi": false,
-        "sort": 1
+        "sort": 0
       },
       {
         "name": "profile_type",
