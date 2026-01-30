@@ -98,7 +98,7 @@
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 48 },
       "targets": [
         {
-          "expr": "rate(process_cpu_seconds_total{job=\"vertx-apps\"}[1m])",
+          "expr": "process_cpu_usage{job=\"vertx-apps\"}",
           "legendFormat": "{{instance}}"
         }
       ],
@@ -155,8 +155,8 @@
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 56 },
       "targets": [
         {
-          "expr": "rate(http_server_requests_seconds_count{job=\"vertx-apps\"}[1m])",
-          "legendFormat": "{{method}} {{uri}}"
+          "expr": "rate(vertx_http_server_requests_total{job=\"vertx-apps\"}[1m])",
+          "legendFormat": "{{method}} {{route}}"
         }
       ],
       "fieldConfig": {

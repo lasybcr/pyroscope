@@ -20,7 +20,7 @@
         "name": "instance",
         "type": "query",
         "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
-        "query": "label_values(http_server_requests_seconds_count{job=\"vertx-apps\"}, instance)",
+        "query": "label_values(vertx_http_server_requests_total{job=\"vertx-apps\"}, instance)",
         "refresh": 2,
         "includeAll": true,
         "multi": true,
@@ -31,7 +31,7 @@
         "name": "method",
         "type": "query",
         "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
-        "query": "label_values(http_server_requests_seconds_count{job=\"vertx-apps\"}, method)",
+        "query": "label_values(vertx_http_server_requests_total{job=\"vertx-apps\"}, method)",
         "refresh": 2,
         "includeAll": true,
         "multi": true,
@@ -49,8 +49,8 @@
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
       "targets": [
         {
-          "expr": "sum by (uri) (rate(http_server_requests_seconds_count{job=\"vertx-apps\", instance=~\"$instance\", method=~\"$method\"}[1m]))",
-          "legendFormat": "{{uri}}"
+          "expr": "sum by (route) (rate(vertx_http_server_requests_total{job=\"vertx-apps\", instance=~\"$instance\", method=~\"$method\"}[1m]))",
+          "legendFormat": "{{route}}"
         }
       ],
       "fieldConfig": {
@@ -68,7 +68,7 @@
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
       "targets": [
         {
-          "expr": "sum by (instance) (rate(http_server_requests_seconds_count{job=\"vertx-apps\", instance=~\"$instance\"}[1m]))",
+          "expr": "sum by (instance) (rate(vertx_http_server_requests_total{job=\"vertx-apps\", instance=~\"$instance\"}[1m]))",
           "legendFormat": "{{instance}}"
         }
       ],
@@ -87,7 +87,7 @@
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
       "targets": [
         {
-          "expr": "sum by (instance) (http_server_requests_seconds_count{job=\"vertx-apps\", instance=~\"$instance\"})",
+          "expr": "sum by (instance) (vertx_http_server_requests_total{job=\"vertx-apps\", instance=~\"$instance\"})",
           "legendFormat": "{{instance}}"
         }
       ],
@@ -105,8 +105,8 @@
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
       "targets": [
         {
-          "expr": "sum by (uri) (rate(http_server_requests_seconds_sum{job=\"vertx-apps\", instance=~\"$instance\", method=~\"$method\"}[1m])) / sum by (uri) (rate(http_server_requests_seconds_count{job=\"vertx-apps\", instance=~\"$instance\", method=~\"$method\"}[1m]))",
-          "legendFormat": "{{uri}} avg"
+          "expr": "sum by (route) (rate(vertx_http_server_response_time_seconds_sum{job=\"vertx-apps\", instance=~\"$instance\", method=~\"$method\"}[1m])) / sum by (route) (rate(vertx_http_server_response_time_seconds_count{job=\"vertx-apps\", instance=~\"$instance\", method=~\"$method\"}[1m]))",
+          "legendFormat": "{{route}} avg"
         }
       ],
       "fieldConfig": {
@@ -118,22 +118,14 @@
     },
     {
       "id": 11,
-      "title": "Latency p50 / p95 / p99",
+      "title": "Max Latency by Endpoint",
       "type": "timeseries",
       "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 24 },
       "targets": [
         {
-          "expr": "histogram_quantile(0.50, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"vertx-apps\", instance=~\"$instance\"}[1m])))",
-          "legendFormat": "p50"
-        },
-        {
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"vertx-apps\", instance=~\"$instance\"}[1m])))",
-          "legendFormat": "p95"
-        },
-        {
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"vertx-apps\", instance=~\"$instance\"}[1m])))",
-          "legendFormat": "p99"
+          "expr": "vertx_http_server_response_time_seconds_max{job=\"vertx-apps\", instance=~\"$instance\", method=~\"$method\"}",
+          "legendFormat": "{{instance}} {{route}} max"
         }
       ],
       "fieldConfig": {
@@ -151,7 +143,7 @@
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
       "targets": [
         {
-          "expr": "sum by (instance) (rate(http_server_requests_seconds_count{job=\"vertx-apps\", instance=~\"$instance\", status=~\"5..\"}[1m]))",
+          "expr": "sum by (instance) (rate(vertx_http_server_requests_total{job=\"vertx-apps\", instance=~\"$instance\", code=~\"5..\"}[1m]))",
           "legendFormat": "{{instance}} 5xx"
         }
       ],
@@ -177,8 +169,8 @@
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
       "targets": [
         {
-          "expr": "sum by (status) (increase(http_server_requests_seconds_count{job=\"vertx-apps\", instance=~\"$instance\"}[1h]))",
-          "legendFormat": "{{status}}"
+          "expr": "sum by (code) (increase(vertx_http_server_requests_total{job=\"vertx-apps\", instance=~\"$instance\"}[1h]))",
+          "legendFormat": "{{code}}"
         }
       ]
     },
@@ -190,8 +182,8 @@
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 40 },
       "targets": [
         {
-          "expr": "topk(10, sum by (uri) (rate(http_server_requests_seconds_sum{job=\"vertx-apps\", instance=~\"$instance\"}[5m])) / sum by (uri) (rate(http_server_requests_seconds_count{job=\"vertx-apps\", instance=~\"$instance\"}[5m])))",
-          "legendFormat": "{{uri}}"
+          "expr": "topk(10, sum by (route) (rate(vertx_http_server_response_time_seconds_sum{job=\"vertx-apps\", instance=~\"$instance\"}[5m])) / sum by (route) (rate(vertx_http_server_response_time_seconds_count{job=\"vertx-apps\", instance=~\"$instance\"}[5m])))",
+          "legendFormat": "{{route}}"
         }
       ],
       "fieldConfig": {

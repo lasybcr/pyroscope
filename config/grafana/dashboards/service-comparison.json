@@ -11,18 +11,18 @@
   "panels": [
     {
       "id": 1,
-      "title": "CPU — MainVerticle vs OrderVerticle",
+      "title": "CPU — API Gateway vs Order Service",
       "type": "timeseries",
       "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
       "targets": [
         {
-          "expr": "rate(process_cpu_seconds_total{job=\"vertx-apps\", instance=~\"api-gateway:8080\"}[1m])",
-          "legendFormat": "MainVerticle (vertx-app)"
+          "expr": "process_cpu_usage{job=\"vertx-apps\", instance=\"api-gateway:8080\"}",
+          "legendFormat": "API Gateway"
         },
         {
-          "expr": "rate(process_cpu_seconds_total{job=\"vertx-apps\", instance=~\"order-service:8080\"}[1m])",
-          "legendFormat": "OrderVerticle (vertx-app-2)"
+          "expr": "process_cpu_usage{job=\"vertx-apps\", instance=\"order-service:8080\"}",
+          "legendFormat": "Order Service"
         }
       ],
       "fieldConfig": {
@@ -31,18 +31,18 @@
     },
     {
       "id": 2,
-      "title": "Heap Used — MainVerticle vs OrderVerticle",
+      "title": "Heap Used — API Gateway vs Order Service",
       "type": "timeseries",
       "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
       "targets": [
         {
-          "expr": "sum by (instance) (jvm_memory_used_bytes{job=\"vertx-apps\", area=\"heap\", instance=~\"api-gateway:8080\"})",
-          "legendFormat": "MainVerticle heap"
+          "expr": "sum by (instance) (jvm_memory_used_bytes{job=\"vertx-apps\", area=\"heap\", instance=\"api-gateway:8080\"})",
+          "legendFormat": "API Gateway heap"
         },
         {
-          "expr": "sum by (instance) (jvm_memory_used_bytes{job=\"vertx-apps\", area=\"heap\", instance=~\"order-service:8080\"})",
-          "legendFormat": "OrderVerticle heap"
+          "expr": "sum by (instance) (jvm_memory_used_bytes{job=\"vertx-apps\", area=\"heap\", instance=\"order-service:8080\"})",
+          "legendFormat": "Order Service heap"
         }
       ],
       "fieldConfig": {
@@ -51,18 +51,18 @@
     },
     {
       "id": 3,
-      "title": "GC Pause Rate — MainVerticle vs OrderVerticle",
+      "title": "GC Pause Rate — API Gateway vs Order Service",
       "type": "timeseries",
       "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
       "targets": [
         {
-          "expr": "rate(jvm_gc_pause_seconds_sum{job=\"vertx-apps\", instance=~\"api-gateway:8080\"}[1m])",
-          "legendFormat": "MainVerticle — {{action}}"
+          "expr": "rate(jvm_gc_pause_seconds_sum{job=\"vertx-apps\", instance=\"api-gateway:8080\"}[1m])",
+          "legendFormat": "API Gateway — {{action}}"
         },
         {
-          "expr": "rate(jvm_gc_pause_seconds_sum{job=\"vertx-apps\", instance=~\"order-service:8080\"}[1m])",
-          "legendFormat": "OrderVerticle — {{action}}"
+          "expr": "rate(jvm_gc_pause_seconds_sum{job=\"vertx-apps\", instance=\"order-service:8080\"}[1m])",
+          "legendFormat": "Order Service — {{action}}"
         }
       ],
       "fieldConfig": {
@@ -71,18 +71,18 @@
     },
     {
       "id": 4,
-      "title": "Thread Count — MainVerticle vs OrderVerticle",
+      "title": "Thread Count — API Gateway vs Order Service",
       "type": "timeseries",
       "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
       "targets": [
         {
-          "expr": "jvm_threads_live_threads{job=\"vertx-apps\", instance=~\"api-gateway:8080\"}",
-          "legendFormat": "MainVerticle threads"
+          "expr": "jvm_threads_live_threads{job=\"vertx-apps\", instance=\"api-gateway:8080\"}",
+          "legendFormat": "API Gateway threads"
         },
         {
-          "expr": "jvm_threads_live_threads{job=\"vertx-apps\", instance=~\"order-service:8080\"}",
-          "legendFormat": "OrderVerticle threads"
+          "expr": "jvm_threads_live_threads{job=\"vertx-apps\", instance=\"order-service:8080\"}",
+          "legendFormat": "Order Service threads"
         }
       ],
       "fieldConfig": {
@@ -91,18 +91,18 @@
     },
     {
       "id": 10,
-      "title": "Request Rate — MainVerticle vs OrderVerticle",
+      "title": "Request Rate — API Gateway vs Order Service",
       "type": "timeseries",
       "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 24 },
       "targets": [
         {
-          "expr": "sum(rate(http_server_requests_seconds_count{job=\"vertx-apps\", instance=~\"api-gateway:8080\"}[1m]))",
-          "legendFormat": "MainVerticle req/s"
+          "expr": "sum(rate(vertx_http_server_requests_total{job=\"vertx-apps\", instance=\"api-gateway:8080\"}[1m]))",
+          "legendFormat": "API Gateway req/s"
         },
         {
-          "expr": "sum(rate(http_server_requests_seconds_count{job=\"vertx-apps\", instance=~\"order-service:8080\"}[1m]))",
-          "legendFormat": "OrderVerticle req/s"
+          "expr": "sum(rate(vertx_http_server_requests_total{job=\"vertx-apps\", instance=\"order-service:8080\"}[1m]))",
+          "legendFormat": "Order Service req/s"
         }
       ],
       "fieldConfig": {
@@ -111,18 +111,18 @@
     },
     {
       "id": 11,
-      "title": "Avg Latency — MainVerticle vs OrderVerticle",
+      "title": "Avg Latency — API Gateway vs Order Service",
       "type": "timeseries",
       "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 32 },
       "targets": [
         {
-          "expr": "sum(rate(http_server_requests_seconds_sum{job=\"vertx-apps\", instance=~\"api-gateway:8080\"}[1m])) / sum(rate(http_server_requests_seconds_count{job=\"vertx-apps\", instance=~\"api-gateway:8080\"}[1m]))",
-          "legendFormat": "MainVerticle avg"
+          "expr": "sum(rate(vertx_http_server_response_time_seconds_sum{job=\"vertx-apps\", instance=\"api-gateway:8080\"}[1m])) / sum(rate(vertx_http_server_response_time_seconds_count{job=\"vertx-apps\", instance=\"api-gateway:8080\"}[1m]))",
+          "legendFormat": "API Gateway avg"
         },
         {
-          "expr": "sum(rate(http_server_requests_seconds_sum{job=\"vertx-apps\", instance=~\"order-service:8080\"}[1m])) / sum(rate(http_server_requests_seconds_count{job=\"vertx-apps\", instance=~\"order-service:8080\"}[1m]))",
-          "legendFormat": "OrderVerticle avg"
+          "expr": "sum(rate(vertx_http_server_response_time_seconds_sum{job=\"vertx-apps\", instance=\"order-service:8080\"}[1m])) / sum(rate(vertx_http_server_response_time_seconds_count{job=\"vertx-apps\", instance=\"order-service:8080\"}[1m]))",
+          "legendFormat": "Order Service avg"
         }
       ],
       "fieldConfig": {
@@ -131,7 +131,7 @@
     },
     {
       "id": 20,
-      "title": "CPU Profile — MainVerticle",
+      "title": "CPU Profile — API Gateway",
       "type": "flamegraph",
       "datasource": { "type": "grafana-pyroscope-datasource", "uid": "pyroscope-ds" },
       "gridPos": { "h": 12, "w": 24, "x": 0, "y": 40 },
@@ -144,7 +144,7 @@
     },
     {
       "id": 21,
-      "title": "CPU Profile — OrderVerticle",
+      "title": "CPU Profile — Order Service",
       "type": "flamegraph",
       "datasource": { "type": "grafana-pyroscope-datasource", "uid": "pyroscope-ds" },
       "gridPos": { "h": 12, "w": 24, "x": 0, "y": 52 },
@@ -159,6 +159,6 @@
   "schemaVersion": 39,
   "tags": ["comparison", "vertx", "verticle", "profiling"],
   "time": { "from": "now-1h", "to": "now" },
-  "title": "Service Comparison — MainVerticle vs OrderVerticle",
+  "title": "Service Comparison — API Gateway vs Order Service",
   "uid": "service-comparison"
 }

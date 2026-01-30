@@ -2,7 +2,7 @@ groups:
   - name: jvm_alerts
     rules:
       - alert: HighCpuUsage
-        expr: rate(process_cpu_seconds_total{job="vertx-apps"}[2m]) > 0.8
+        expr: process_cpu_usage{job="vertx-apps"} > 0.8
         for: 1m
         labels:
           severity: warning
@@ -32,7 +32,7 @@ groups:
           runbook: "Check allocation profile and heap sizing. See docs/runbook.md#gc-pressure"
 
       - alert: HighErrorRate
-        expr: sum by (instance) (rate(http_server_requests_seconds_count{job="vertx-apps", status=~"5.."}[2m])) / sum by (instance) (rate(http_server_requests_seconds_count{job="vertx-apps"}[2m])) > 0.05
+        expr: sum by (instance) (rate(vertx_http_server_requests_total{job="vertx-apps", code=~"5.."}[2m])) / sum by (instance) (rate(vertx_http_server_requests_total{job="vertx-apps"}[2m])) > 0.05
         for: 1m
         labels:
           severity: critical
@@ -41,13 +41,13 @@ groups:
           description: "Error rate is {{ $value | humanizePercentage }}"
 
       - alert: HighLatency
-        expr: histogram_quantile(0.99, sum by (le, instance) (rate(http_server_requests_seconds_bucket{job="vertx-apps"}[5m]))) > 2
+        expr: vertx_http_server_response_time_seconds_max{job="vertx-apps"} > 2
         for: 2m
         labels:
           severity: warning
         annotations:
-          summary: "p99 latency > 2s on {{ $labels.instance }}"
-          description: "p99 latency is {{ $value }}s"
+          summary: "Max latency > 2s on {{ $labels.instance }}"
+          description: "Max response time is {{ $value }}s"
           runbook: "Check CPU and lock profiles in Pyroscope. See docs/runbook.md#latency-spike"
 
       - alert: ServiceDown

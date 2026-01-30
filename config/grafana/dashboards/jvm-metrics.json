@@ -40,7 +40,7 @@
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
       "targets": [
         {
-          "expr": "rate(process_cpu_seconds_total{job=\"vertx-apps\", instance=~\"$instance\"}[$interval])",
+          "expr": "process_cpu_usage{job=\"vertx-apps\", instance=~\"$instance\"}",
           "legendFormat": "{{instance}}"
         }
       ],
@@ -67,7 +67,7 @@
       "gridPos": { "h": 8, "w": 6, "x": 12, "y": 0 },
       "targets": [
         {
-          "expr": "avg(rate(process_cpu_seconds_total{job=\"vertx-apps\", instance=~\"$instance\"}[1m]))",
+          "expr": "avg(process_cpu_usage{job=\"vertx-apps\", instance=~\"$instance\"})",
           "legendFormat": "avg CPU"
         }
       ],
@@ -89,13 +89,13 @@
     },
     {
       "id": 3,
-      "title": "Open File Descriptors",
+      "title": "Available Processors",
       "type": "stat",
       "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
       "gridPos": { "h": 8, "w": 6, "x": 18, "y": 0 },
       "targets": [
         {
-          "expr": "process_open_fds{job=\"vertx-apps\", instance=~\"$instance\"}",
+          "expr": "system_cpu_count{job=\"vertx-apps\", instance=~\"$instance\"}",
           "legendFormat": "{{instance}}"
         }
       ],
@@ -104,7 +104,7 @@
           "thresholds": {
             "steps": [
               { "color": "green", "value": null },
-              { "color": "red", "value": 1000 }
+              { "color": "yellow", "value": 8 }
             ]
           }
         }
