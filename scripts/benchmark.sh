@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eo pipefail
 
 # Benchmarks bank services WITH and WITHOUT the Pyroscope agent to measure
 # profiling overhead. Runs N requests against each service endpoint and
@@ -7,21 +7,26 @@ set -euo pipefail
 
 REQUESTS="${1:-200}"
 WARMUP="${2:-50}"
-CONCURRENCY="${3:-4}"
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+ENV_FILE="$PROJECT_DIR/.env"
 
-# ---------------------------------------------------------------------------
-# Endpoints to benchmark (one per service, representative workload)
-# ---------------------------------------------------------------------------
-declare -A ENDPOINTS=(
-  ["api-gateway"]="http://localhost:8080/cpu"
-  ["order-service"]="http://localhost:8081/order/create"
-  ["payment-service"]="http://localhost:8082/payment/transfer"
-  ["fraud-service"]="http://localhost:8083/fraud/score"
-  ["account-service"]="http://localhost:8084/account/interest"
-  ["loan-service"]="http://localhost:8085/loan/amortize"
-  ["notification-service"]="http://localhost:8086/notify/send"
-)
+# Load port assignments
+if [ -f "$ENV_FILE" ]; then
+  set -a; . "$ENV_FILE"; set +a
+fi
+
+GW="${API_GATEWAY_PORT:-18080}"
+OR="${ORDER_SERVICE_PORT:-18081}"
+PA="${PAYMENT_SERVICE_PORT:-18082}"
+FR="${FRAUD_SERVICE_PORT:-18083}"
+AC="${ACCOUNT_SERVICE_PORT:-18084}"
+LO="${LOAN_SERVICE_PORT:-18085}"
+NO="${NOTIFICATION_SERVICE_PORT:-18086}"
+
+# Service definitions (no associative arrays — bash 3.2 compatible)
+SVC_NAMES="api-gateway order-service payment-service fraud-service account-service loan-service notification-service"
+SVC_URLS="http://localhost:${GW}/cpu http://localhost:${OR}/order/create http://localhost:${PA}/payment/transfer http://localhost:${FR}/fraud/score http://localhost:${AC}/account/interest http://localhost:${LO}/loan/amortize http://localhost:${NO}/notify/send"
+SVC_HEALTH="http://localhost:${GW}/health http://localhost:${OR}/health http://localhost:${PA}/health http://localhost:${FR}/health http://localhost:${AC}/health http://localhost:${LO}/health http://localhost:${NO}/health"
 
 RESULTS_DIR="$PROJECT_DIR/benchmark-results"
 mkdir -p "$RESULTS_DIR"
@@ -34,58 +39,82 @@ bench_run() {
 
   echo "service,endpoint,requests,errors,avg_ms,p50_ms,p95_ms,p99_ms,req_per_sec" > "$outfile"
 
-  for svc in "${!ENDPOINTS[@]}"; do
-    local url="${ENDPOINTS[$svc]}"
+  set -f
+  local names=($SVC_NAMES)
+  local urls=($SVC_URLS)
+  set +f
 
-    # Warmup (discard output)
+  local idx=0
+  for svc in "${names[@]}"; do
+    local url="${urls[$idx]}"
+    idx=$((idx + 1))
+
+    # Warmup
     for i in $(seq 1 "$WARMUP"); do
       curl -sf -o /dev/null --max-time 10 "$url" 2>/dev/null || true
     done
 
-    # Timed run
-    local total_ms=0
+    # Timed run — collect times in a temp file (bash 3.2 safe)
+    local tmpfile
+    tmpfile=$(mktemp)
     local errors=0
-    local times=()
 
     for i in $(seq 1 "$REQUESTS"); do
       local t
-      t=$(curl -sf -o /dev/null -w "%{time_total}" --max-time 15 "$url" 2>/dev/null) || { ((errors++)) || true; continue; }
-      local ms
-      ms=$(echo "$t * 1000" | bc 2>/dev/null || echo "0")
-      times+=("$ms")
+      t=$(curl -sf -o /dev/null -w "%{time_total}" --max-time 15 "$url" 2>/dev/null) || { errors=$((errors + 1)); continue; }
+      echo "$t * 1000" | bc 2>/dev/null >> "$tmpfile" || true
     done
 
-    local count=${#times[@]}
+    local count
+    count=$(wc -l < "$tmpfile" | tr -d ' ')
+
     if [ "$count" -eq 0 ]; then
       echo "$svc,$url,$REQUESTS,$errors,0,0,0,0,0" >> "$outfile"
+      rm -f "$tmpfile"
       continue
     fi
 
-    # Sort times
-    IFS=$'\n' sorted=($(sort -g <<<"${times[*]}")); unset IFS
-
-    # Stats
-    local sum=0
-    for t in "${sorted[@]}"; do sum=$(echo "$sum + $t" | bc); done
-    local avg=$(echo "scale=2; $sum / $count" | bc)
-    local p50=${sorted[$(( count * 50 / 100 ))]}
-    local p95=${sorted[$(( count * 95 / 100 ))]}
-    local p99=${sorted[$(( count * 99 / 100 ))]}
-    local total_sec=$(echo "scale=3; $sum / 1000" | bc)
-    local rps
+    # Sort and compute stats
+    sort -g "$tmpfile" > "${tmpfile}.sorted"
+    local sum
+    sum=$(paste -sd+ "${tmpfile}.sorted" | bc)
+    local avg
+    avg=$(echo "scale=2; $sum / $count" | bc)
+    local p50
+    p50=$(sed -n "$((count * 50 / 100 + 1))p" "${tmpfile}.sorted")
+    local p95
+    p95=$(sed -n "$((count * 95 / 100 + 1))p" "${tmpfile}.sorted")
+    local p99
+    p99=$(sed -n "$((count * 99 / 100 + 1))p" "${tmpfile}.sorted")
+    local total_sec
+    total_sec=$(echo "scale=3; $sum / 1000" | bc)
+    local rps=0
     if [ "$(echo "$total_sec > 0" | bc)" -eq 1 ]; then
       rps=$(echo "scale=1; $count / $total_sec" | bc)
-    else
-      rps=0
     fi
 
     echo "$svc,$url,$REQUESTS,$errors,$avg,$p50,$p95,$p99,$rps" >> "$outfile"
     printf "  %-25s avg=%-8s p50=%-8s p95=%-8s p99=%-8s rps=%-6s errors=%s\n" \
            "$svc" "${avg}ms" "${p50}ms" "${p95}ms" "${p99}ms" "$rps" "$errors"
+
+    rm -f "$tmpfile" "${tmpfile}.sorted"
   done
 
   echo ""
   echo "  Results saved to: $outfile"
+}
+
+# ---------------------------------------------------------------------------
+wait_for_services() {
+  set -f
+  local health_urls=($SVC_HEALTH)
+  set +f
+  for url in "${health_urls[@]}"; do
+    for attempt in $(seq 1 15); do
+      curl -sf -o /dev/null "$url" 2>/dev/null && break
+      sleep 2
+    done
+  done
 }
 
 # ---------------------------------------------------------------------------
@@ -103,16 +132,7 @@ docker compose up -d > /dev/null 2>&1
 
 echo "    Waiting for services to start..."
 sleep 20
-
-# Verify services are up
-for svc in "${!ENDPOINTS[@]}"; do
-  url="${ENDPOINTS[$svc]}"
-  host_url=$(echo "$url" | sed 's|/[^/]*$|/health|')
-  for attempt in $(seq 1 15); do
-    curl -sf -o /dev/null "$host_url" 2>/dev/null && break
-    sleep 2
-  done
-done
+wait_for_services
 
 echo "    Running benchmark..."
 bench_run "with-pyroscope"
@@ -128,15 +148,7 @@ docker compose -f docker-compose.yml -f docker-compose.no-pyroscope.yml up -d > 
 
 echo "    Waiting for services to start..."
 sleep 20
-
-for svc in "${!ENDPOINTS[@]}"; do
-  url="${ENDPOINTS[$svc]}"
-  host_url=$(echo "$url" | sed 's|/[^/]*$|/health|')
-  for attempt in $(seq 1 15); do
-    curl -sf -o /dev/null "$host_url" 2>/dev/null && break
-    sleep 2
-  done
-done
+wait_for_services
 
 echo "    Running benchmark..."
 bench_run "without-pyroscope"
