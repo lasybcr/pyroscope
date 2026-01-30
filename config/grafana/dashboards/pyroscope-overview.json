@@ -1,0 +1,188 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "templating": {
+    "list": [
+      {
+        "name": "application",
+        "type": "query",
+        "datasource": { "type": "grafana-pyroscope-datasource", "uid": "pyroscope-ds" },
+        "query": { "type": "label_values", "label": "service_name" },
+        "current": { "text": "vertx-sample-app", "value": "vertx-sample-app" },
+        "refresh": 2,
+        "includeAll": false,
+        "multi": false,
+        "sort": 1
+      },
+      {
+        "name": "profile_type",
+        "type": "custom",
+        "query": "process_cpu:cpu:nanoseconds:cpu:nanoseconds,memory:alloc_in_new_tlab_bytes:bytes:space:bytes,lock:contentions:count:lock:count",
+        "current": { "text": "process_cpu:cpu:nanoseconds:cpu:nanoseconds", "value": "process_cpu:cpu:nanoseconds:cpu:nanoseconds" },
+        "includeAll": false,
+        "multi": false,
+        "sort": 0
+      },
+      {
+        "name": "comparison_range",
+        "type": "custom",
+        "query": "15m,30m,1h,3h,6h",
+        "current": { "text": "1h", "value": "1h" },
+        "includeAll": false,
+        "multi": false,
+        "sort": 0
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "CPU Profile – Flame Graph",
+      "type": "flamegraph",
+      "datasource": { "type": "grafana-pyroscope-datasource", "uid": "pyroscope-ds" },
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "profileTypeId": "process_cpu:cpu:nanoseconds:cpu:nanoseconds",
+          "labelSelector": "{service_name=\"$application\"}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Memory Allocation – Flame Graph",
+      "type": "flamegraph",
+      "datasource": { "type": "grafana-pyroscope-datasource", "uid": "pyroscope-ds" },
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 12 },
+      "targets": [
+        {
+          "profileTypeId": "memory:alloc_in_new_tlab_bytes:bytes:space:bytes",
+          "labelSelector": "{service_name=\"$application\"}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Lock Contention – Flame Graph",
+      "type": "flamegraph",
+      "datasource": { "type": "grafana-pyroscope-datasource", "uid": "pyroscope-ds" },
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 24 },
+      "targets": [
+        {
+          "profileTypeId": "lock:contentions:count:lock:count",
+          "labelSelector": "{service_name=\"$application\"}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Profile Comparison (Selected Type)",
+      "type": "flamegraph",
+      "datasource": { "type": "grafana-pyroscope-datasource", "uid": "pyroscope-ds" },
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 36 },
+      "targets": [
+        {
+          "profileTypeId": "$profile_type",
+          "labelSelector": "{service_name=\"$application\"}"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "JVM CPU Usage",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 48 },
+      "targets": [
+        {
+          "expr": "rate(process_cpu_seconds_total{job=\"vertx-app\"}[1m])",
+          "legendFormat": "{{instance}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": { "fillOpacity": 10 }
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "JVM Heap Memory Used",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 48 },
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes{job=\"vertx-app\", area=\"heap\"}",
+          "legendFormat": "{{instance}} - {{id}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": { "fillOpacity": 10 }
+        }
+      }
+    },
+    {
+      "id": 7,
+      "title": "GC Pause Duration Rate",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 56 },
+      "targets": [
+        {
+          "expr": "rate(jvm_gc_pause_seconds_sum{job=\"vertx-app\"}[1m])",
+          "legendFormat": "{{instance}} - {{action}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "fillOpacity": 10 }
+        }
+      }
+    },
+    {
+      "id": 8,
+      "title": "HTTP Request Rate by Endpoint",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 56 },
+      "targets": [
+        {
+          "expr": "rate(http_server_requests_seconds_count{job=\"vertx-app\"}[1m])",
+          "legendFormat": "{{method}} {{uri}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": { "fillOpacity": 10 }
+        }
+      }
+    },
+    {
+      "id": 9,
+      "title": "Top Functions (CPU)",
+      "type": "table",
+      "datasource": { "type": "grafana-pyroscope-datasource", "uid": "pyroscope-ds" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 64 },
+      "targets": [
+        {
+          "profileTypeId": "process_cpu:cpu:nanoseconds:cpu:nanoseconds",
+          "labelSelector": "{service_name=\"$application\"}"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["pyroscope", "java", "vertx", "enterprise"],
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "Pyroscope Java Overview",
+  "uid": "pyroscope-java-overview"
+}

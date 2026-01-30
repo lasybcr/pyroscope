@@ -1,0 +1,137 @@
+---
+# Ansible playbook — deploys the full Pyroscope observability stack.
+# Wraps docker compose so it works on remote hosts too.
+#
+# Usage:
+#   ansible-playbook -i inventory.yml deploy.yml
+#   ansible-playbook -i inventory.yml deploy.yml -e grafana_admin_password=secret
+
+- name: Deploy Pyroscope demo stack
+  hosts: all
+  gather_facts: false
+
+  tasks:
+    # ------------------------------------------------------------------
+    # Build
+    # ------------------------------------------------------------------
+    - name: Build app images
+      community.docker.docker_compose_v2:
+        project_src: "{{ project_dir }}"
+        build: always
+        state: present
+        pull: missing
+      register: compose_result
+
+    - name: Show running services
+      ansible.builtin.debug:
+        msg: "{{ compose_result.services | default('compose up complete') }}"
+
+    # ------------------------------------------------------------------
+    # Health checks — infrastructure
+    # ------------------------------------------------------------------
+    - name: Wait for Pyroscope
+      ansible.builtin.uri:
+        url: http://localhost:4040/ready
+        status_code: 200
+      register: pyroscope_health
+      retries: 30
+      delay: 2
+      until: pyroscope_health.status == 200
+
+    - name: Wait for Prometheus
+      ansible.builtin.uri:
+        url: http://localhost:9090/-/ready
+        status_code: 200
+      register: prometheus_health
+      retries: 30
+      delay: 2
+      until: prometheus_health.status == 200
+
+    - name: Wait for Grafana
+      ansible.builtin.uri:
+        url: http://localhost:3000/api/health
+        status_code: 200
+      register: grafana_health
+      retries: 30
+      delay: 2
+      until: grafana_health.status == 200
+
+    # ------------------------------------------------------------------
+    # Health checks — bank microservices
+    # ------------------------------------------------------------------
+    - name: Wait for API Gateway
+      ansible.builtin.uri:
+        url: http://localhost:8080/health
+        status_code: 200
+      register: api_gateway_health
+      retries: 30
+      delay: 2
+      until: api_gateway_health.status == 200
+
+    - name: Wait for Order Service
+      ansible.builtin.uri:
+        url: http://localhost:8081/health
+        status_code: 200
+      register: order_service_health
+      retries: 30
+      delay: 2
+      until: order_service_health.status == 200
+
+    - name: Wait for Payment Service
+      ansible.builtin.uri:
+        url: http://localhost:8082/health
+        status_code: 200
+      register: payment_service_health
+      retries: 30
+      delay: 2
+      until: payment_service_health.status == 200
+
+    - name: Wait for Fraud Service
+      ansible.builtin.uri:
+        url: http://localhost:8083/health
+        status_code: 200
+      register: fraud_service_health
+      retries: 30
+      delay: 2
+      until: fraud_service_health.status == 200
+
+    - name: Wait for Account Service
+      ansible.builtin.uri:
+        url: http://localhost:8084/health
+        status_code: 200
+      register: account_service_health
+      retries: 30
+      delay: 2
+      until: account_service_health.status == 200
+
+    - name: Wait for Loan Service
+      ansible.builtin.uri:
+        url: http://localhost:8085/health
+        status_code: 200
+      register: loan_service_health
+      retries: 30
+      delay: 2
+      until: loan_service_health.status == 200
+
+    - name: Wait for Notification Service
+      ansible.builtin.uri:
+        url: http://localhost:8086/health
+        status_code: 200
+      register: notification_service_health
+      retries: 30
+      delay: 2
+      until: notification_service_health.status == 200
+
+    - name: Print service URLs
+      ansible.builtin.debug:
+        msg:
+          - "Grafana:              http://localhost:3000  ({{ grafana_admin_user }}/{{ grafana_admin_password }})"
+          - "Pyroscope:            http://localhost:4040"
+          - "Prometheus:           http://localhost:9090"
+          - "API Gateway:          http://localhost:8080"
+          - "Order Service:        http://localhost:8081"
+          - "Payment Service:      http://localhost:8082"
+          - "Fraud Service:        http://localhost:8083"
+          - "Account Service:      http://localhost:8084"
+          - "Loan Service:         http://localhost:8085"
+          - "Notification Service: http://localhost:8086"

@@ -1,0 +1,251 @@
+version: "3.8"
+
+services:
+  # ---------------------------------------------------------------------------
+  # Grafana Pyroscope – continuous profiling backend
+  # ---------------------------------------------------------------------------
+  pyroscope:
+    image: grafana/pyroscope:latest
+    container_name: pyroscope
+    ports:
+      - "4040:4040"
+    volumes:
+      - pyroscope-data:/data
+      - ./config/pyroscope/pyroscope.yaml:/etc/pyroscope/config.yaml
+    command:
+      - "-config.file=/etc/pyroscope/config.yaml"
+    networks:
+      - monitoring
+
+  # ---------------------------------------------------------------------------
+  # Prometheus – metrics collection
+  # ---------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./config/prometheus/alerts.yml:/etc/prometheus/alerts.yml
+      - prometheus-data:/prometheus
+    networks:
+      - monitoring
+
+  # ---------------------------------------------------------------------------
+  # Grafana – dashboards & visualisation
+  # ---------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=grafana-pyroscope-app
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning
+      - ./config/grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      - prometheus
+      - pyroscope
+    networks:
+      - monitoring
+
+  # ---------------------------------------------------------------------------
+  # Bank Enterprise Services — each runs a different Verticle.
+  # All use the same Docker image; VERTICLE env var selects the class.
+  # Pyroscope agent is injected via JAVA_TOOL_OPTIONS (zero code changes).
+  # ---------------------------------------------------------------------------
+
+  # API Gateway / general workloads (MainVerticle)
+  api-gateway:
+    build:
+      context: ./sample-app
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      JAVA_TOOL_OPTIONS: >-
+        -javaagent:/opt/pyroscope/pyroscope.jar
+        -Dpyroscope.application.name=bank-api-gateway
+        -Dpyroscope.server.address=http://pyroscope:4040
+        -Dpyroscope.format=jfr
+        -Dpyroscope.profiler.event=cpu,alloc,lock,wall
+        -Dpyroscope.profiler.alloc=512k
+        -Dpyroscope.profiler.lock=10ms
+        -Dpyroscope.labels.env=production
+        -Dpyroscope.labels.service=api-gateway
+        -Dpyroscope.log.level=info
+    depends_on:
+      - pyroscope
+    networks:
+      - monitoring
+
+  # Order / Trade Service (OrderVerticle)
+  order-service:
+    build:
+      context: ./sample-app
+      dockerfile: Dockerfile
+    container_name: order-service
+    ports:
+      - "8081:8080"
+    environment:
+      VERTICLE: order
+      JAVA_TOOL_OPTIONS: >-
+        -javaagent:/opt/pyroscope/pyroscope.jar
+        -Dpyroscope.application.name=bank-order-service
+        -Dpyroscope.server.address=http://pyroscope:4040
+        -Dpyroscope.format=jfr
+        -Dpyroscope.profiler.event=cpu,alloc,lock,wall
+        -Dpyroscope.profiler.alloc=512k
+        -Dpyroscope.profiler.lock=10ms
+        -Dpyroscope.labels.env=production
+        -Dpyroscope.labels.service=order-service
+        -Dpyroscope.log.level=info
+    depends_on:
+      - pyroscope
+    networks:
+      - monitoring
+
+  # Payment Processing Service (PaymentVerticle)
+  payment-service:
+    build:
+      context: ./sample-app
+      dockerfile: Dockerfile
+    container_name: payment-service
+    ports:
+      - "8082:8080"
+    environment:
+      VERTICLE: payment
+      JAVA_TOOL_OPTIONS: >-
+        -javaagent:/opt/pyroscope/pyroscope.jar
+        -Dpyroscope.application.name=bank-payment-service
+        -Dpyroscope.server.address=http://pyroscope:4040
+        -Dpyroscope.format=jfr
+        -Dpyroscope.profiler.event=cpu,alloc,lock,wall
+        -Dpyroscope.profiler.alloc=512k
+        -Dpyroscope.profiler.lock=10ms
+        -Dpyroscope.labels.env=production
+        -Dpyroscope.labels.service=payment-service
+        -Dpyroscope.log.level=info
+    depends_on:
+      - pyroscope
+    networks:
+      - monitoring
+
+  # Fraud Detection Service (FraudDetectionVerticle)
+  fraud-service:
+    build:
+      context: ./sample-app
+      dockerfile: Dockerfile
+    container_name: fraud-service
+    ports:
+      - "8083:8080"
+    environment:
+      VERTICLE: fraud
+      JAVA_TOOL_OPTIONS: >-
+        -javaagent:/opt/pyroscope/pyroscope.jar
+        -Dpyroscope.application.name=bank-fraud-service
+        -Dpyroscope.server.address=http://pyroscope:4040
+        -Dpyroscope.format=jfr
+        -Dpyroscope.profiler.event=cpu,alloc,lock,wall
+        -Dpyroscope.profiler.alloc=512k
+        -Dpyroscope.profiler.lock=10ms
+        -Dpyroscope.labels.env=production
+        -Dpyroscope.labels.service=fraud-service
+        -Dpyroscope.log.level=info
+    depends_on:
+      - pyroscope
+    networks:
+      - monitoring
+
+  # Core Accounts Service (AccountVerticle)
+  account-service:
+    build:
+      context: ./sample-app
+      dockerfile: Dockerfile
+    container_name: account-service
+    ports:
+      - "8084:8080"
+    environment:
+      VERTICLE: account
+      JAVA_TOOL_OPTIONS: >-
+        -javaagent:/opt/pyroscope/pyroscope.jar
+        -Dpyroscope.application.name=bank-account-service
+        -Dpyroscope.server.address=http://pyroscope:4040
+        -Dpyroscope.format=jfr
+        -Dpyroscope.profiler.event=cpu,alloc,lock,wall
+        -Dpyroscope.profiler.alloc=512k
+        -Dpyroscope.profiler.lock=10ms
+        -Dpyroscope.labels.env=production
+        -Dpyroscope.labels.service=account-service
+        -Dpyroscope.log.level=info
+    depends_on:
+      - pyroscope
+    networks:
+      - monitoring
+
+  # Loan Origination Service (LoanVerticle)
+  loan-service:
+    build:
+      context: ./sample-app
+      dockerfile: Dockerfile
+    container_name: loan-service
+    ports:
+      - "8085:8080"
+    environment:
+      VERTICLE: loan
+      JAVA_TOOL_OPTIONS: >-
+        -javaagent:/opt/pyroscope/pyroscope.jar
+        -Dpyroscope.application.name=bank-loan-service
+        -Dpyroscope.server.address=http://pyroscope:4040
+        -Dpyroscope.format=jfr
+        -Dpyroscope.profiler.event=cpu,alloc,lock,wall
+        -Dpyroscope.profiler.alloc=512k
+        -Dpyroscope.profiler.lock=10ms
+        -Dpyroscope.labels.env=production
+        -Dpyroscope.labels.service=loan-service
+        -Dpyroscope.log.level=info
+    depends_on:
+      - pyroscope
+    networks:
+      - monitoring
+
+  # Notification Service (NotificationVerticle)
+  notification-service:
+    build:
+      context: ./sample-app
+      dockerfile: Dockerfile
+    container_name: notification-service
+    ports:
+      - "8086:8080"
+    environment:
+      VERTICLE: notification
+      JAVA_TOOL_OPTIONS: >-
+        -javaagent:/opt/pyroscope/pyroscope.jar
+        -Dpyroscope.application.name=bank-notification-service
+        -Dpyroscope.server.address=http://pyroscope:4040
+        -Dpyroscope.format=jfr
+        -Dpyroscope.profiler.event=cpu,alloc,lock,wall
+        -Dpyroscope.profiler.alloc=512k
+        -Dpyroscope.profiler.lock=10ms
+        -Dpyroscope.labels.env=production
+        -Dpyroscope.labels.service=notification-service
+        -Dpyroscope.log.level=info
+    depends_on:
+      - pyroscope
+    networks:
+      - monitoring
+
+volumes:
+  pyroscope-data:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  monitoring:
+    driver: bridge

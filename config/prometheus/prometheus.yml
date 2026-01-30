@@ -1,0 +1,47 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "/etc/prometheus/alerts.yml"
+
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: "pyroscope"
+    static_configs:
+      - targets: ["pyroscope:4040"]
+
+  - job_name: "vertx-apps"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["api-gateway:8080"]
+        labels:
+          group: "vertx"
+          verticle: "api-gateway"
+      - targets: ["order-service:8080"]
+        labels:
+          group: "vertx"
+          verticle: "order"
+      - targets: ["payment-service:8080"]
+        labels:
+          group: "vertx"
+          verticle: "payment"
+      - targets: ["fraud-service:8080"]
+        labels:
+          group: "vertx"
+          verticle: "fraud"
+      - targets: ["account-service:8080"]
+        labels:
+          group: "vertx"
+          verticle: "account"
+      - targets: ["loan-service:8080"]
+        labels:
+          group: "vertx"
+          verticle: "loan"
+      - targets: ["notification-service:8080"]
+        labels:
+          group: "vertx"
+          verticle: "notification"

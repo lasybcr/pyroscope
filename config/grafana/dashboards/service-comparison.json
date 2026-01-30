@@ -1,0 +1,164 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 2,
+  "links": [
+    { "title": "Pyroscope Overview", "url": "/d/pyroscope-java-overview", "type": "link" },
+    { "title": "JVM Metrics", "url": "/d/jvm-metrics-deep-dive", "type": "link" },
+    { "title": "HTTP Performance", "url": "/d/http-performance", "type": "link" }
+  ],
+  "templating": { "list": [] },
+  "panels": [
+    {
+      "id": 1,
+      "title": "CPU — MainVerticle vs OrderVerticle",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "rate(process_cpu_seconds_total{job=\"vertx-apps\", instance=~\"vertx-app:8080\"}[1m])",
+          "legendFormat": "MainVerticle (vertx-app)"
+        },
+        {
+          "expr": "rate(process_cpu_seconds_total{job=\"vertx-apps\", instance=~\"vertx-app-2:8080\"}[1m])",
+          "legendFormat": "OrderVerticle (vertx-app-2)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "percentunit", "custom": { "fillOpacity": 15, "lineWidth": 2 } }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Heap Used — MainVerticle vs OrderVerticle",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum by (instance) (jvm_memory_used_bytes{job=\"vertx-apps\", area=\"heap\", instance=~\"vertx-app:8080\"})",
+          "legendFormat": "MainVerticle heap"
+        },
+        {
+          "expr": "sum by (instance) (jvm_memory_used_bytes{job=\"vertx-apps\", area=\"heap\", instance=~\"vertx-app-2:8080\"})",
+          "legendFormat": "OrderVerticle heap"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "bytes", "custom": { "fillOpacity": 15, "lineWidth": 2 } }
+      }
+    },
+    {
+      "id": 3,
+      "title": "GC Pause Rate — MainVerticle vs OrderVerticle",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "expr": "rate(jvm_gc_pause_seconds_sum{job=\"vertx-apps\", instance=~\"vertx-app:8080\"}[1m])",
+          "legendFormat": "MainVerticle — {{action}}"
+        },
+        {
+          "expr": "rate(jvm_gc_pause_seconds_sum{job=\"vertx-apps\", instance=~\"vertx-app-2:8080\"}[1m])",
+          "legendFormat": "OrderVerticle — {{action}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s", "custom": { "fillOpacity": 20, "drawStyle": "bars" } }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Thread Count — MainVerticle vs OrderVerticle",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "targets": [
+        {
+          "expr": "jvm_threads_live_threads{job=\"vertx-apps\", instance=~\"vertx-app:8080\"}",
+          "legendFormat": "MainVerticle threads"
+        },
+        {
+          "expr": "jvm_threads_live_threads{job=\"vertx-apps\", instance=~\"vertx-app-2:8080\"}",
+          "legendFormat": "OrderVerticle threads"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "custom": { "fillOpacity": 10 } }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Request Rate — MainVerticle vs OrderVerticle",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 24 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"vertx-apps\", instance=~\"vertx-app:8080\"}[1m]))",
+          "legendFormat": "MainVerticle req/s"
+        },
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"vertx-apps\", instance=~\"vertx-app-2:8080\"}[1m]))",
+          "legendFormat": "OrderVerticle req/s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "fillOpacity": 15, "lineWidth": 2 } }
+      }
+    },
+    {
+      "id": 11,
+      "title": "Avg Latency — MainVerticle vs OrderVerticle",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 32 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_sum{job=\"vertx-apps\", instance=~\"vertx-app:8080\"}[1m])) / sum(rate(http_server_requests_seconds_count{job=\"vertx-apps\", instance=~\"vertx-app:8080\"}[1m]))",
+          "legendFormat": "MainVerticle avg"
+        },
+        {
+          "expr": "sum(rate(http_server_requests_seconds_sum{job=\"vertx-apps\", instance=~\"vertx-app-2:8080\"}[1m])) / sum(rate(http_server_requests_seconds_count{job=\"vertx-apps\", instance=~\"vertx-app-2:8080\"}[1m]))",
+          "legendFormat": "OrderVerticle avg"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s", "custom": { "fillOpacity": 15, "lineWidth": 2 } }
+      }
+    },
+    {
+      "id": 20,
+      "title": "CPU Profile — MainVerticle",
+      "type": "flamegraph",
+      "datasource": { "type": "grafana-pyroscope-datasource", "uid": "pyroscope-ds" },
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 40 },
+      "targets": [
+        {
+          "profileTypeId": "process_cpu:cpu:nanoseconds:cpu:nanoseconds",
+          "labelSelector": "{service_name=\"vertx-sample-app\"}"
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "title": "CPU Profile — OrderVerticle",
+      "type": "flamegraph",
+      "datasource": { "type": "grafana-pyroscope-datasource", "uid": "pyroscope-ds" },
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 52 },
+      "targets": [
+        {
+          "profileTypeId": "process_cpu:cpu:nanoseconds:cpu:nanoseconds",
+          "labelSelector": "{service_name=\"vertx-order-service\"}"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["comparison", "vertx", "verticle", "profiling"],
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "Service Comparison — MainVerticle vs OrderVerticle",
+  "uid": "service-comparison"
+}

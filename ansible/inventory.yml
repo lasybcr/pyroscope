@@ -1,0 +1,14 @@
+all:
+  hosts:
+    localhost:
+      ansible_connection: local
+      ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+  vars:
+    project_dir: "{{ playbook_dir }}/.."
+    grafana_admin_user: admin
+    grafana_admin_password: admin
+    pyroscope_image: grafana/pyroscope:latest
+    prometheus_image: prom/prometheus:v2.53.0
+    grafana_image: grafana/grafana:11.1.0
+    vertx_app_image: pyroscope-vertx-app

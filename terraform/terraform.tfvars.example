@@ -1,0 +1,4 @@
+# Copy to terraform.tfvars and adjust for your environment
+project_dir            = "/absolute/path/to/pyroscope"
+grafana_admin_password = "admin"
+vertx_app_image        = "pyroscope-vertx-app:latest"

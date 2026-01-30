@@ -1,0 +1,20 @@
+---
+# Tear down the Pyroscope demo stack (all 7 bank microservices + infrastructure).
+#
+# Usage:
+#   ansible-playbook -i inventory.yml teardown.yml
+
+- name: Tear down Pyroscope demo stack
+  hosts: all
+  gather_facts: false
+
+  tasks:
+    - name: Stop and remove all containers, networks, and volumes
+      community.docker.docker_compose_v2:
+        project_src: "{{ project_dir }}"
+        state: absent
+        remove_volumes: true
+
+    - name: Confirm teardown
+      ansible.builtin.debug:
+        msg: "All services stopped and volumes removed."

@@ -1,0 +1,14 @@
+# Pyroscope server configuration
+# Docs: https://grafana.com/docs/pyroscope/latest/configure-server/
+
+storage:
+  backend: filesystem
+  filesystem:
+    dir: /data
+
+server:
+  http_listen_port: 4040
+
+# Self-profiling for Pyroscope itself (optional)
+self_profiling:
+  disable_push: true

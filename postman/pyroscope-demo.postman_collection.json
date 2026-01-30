@@ -1,0 +1,481 @@
+{
+  "info": {
+    "name": "Pyroscope Demo",
+    "description": "Complete API collection for the Pyroscope continuous profiling demo.\n\nCovers all 7 bank microservices (API Gateway, Order, Payment, Fraud, Account, Loan, Notification), Pyroscope API, Prometheus API, and Grafana API.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "gateway_url", "value": "http://localhost:8080" },
+    { "key": "order_url", "value": "http://localhost:8081" },
+    { "key": "payment_url", "value": "http://localhost:8082" },
+    { "key": "fraud_url", "value": "http://localhost:8083" },
+    { "key": "account_url", "value": "http://localhost:8084" },
+    { "key": "loan_url", "value": "http://localhost:8085" },
+    { "key": "notification_url", "value": "http://localhost:8086" },
+    { "key": "pyroscope_url", "value": "http://localhost:4040" },
+    { "key": "prometheus_url", "value": "http://localhost:9090" },
+    { "key": "grafana_url", "value": "http://localhost:3000" },
+    { "key": "grafana_user", "value": "admin" },
+    { "key": "grafana_password", "value": "admin" }
+  ],
+  "item": [
+    {
+      "name": "Health & Metrics",
+      "item": [
+        {
+          "name": "API Gateway — Health",
+          "request": { "method": "GET", "url": { "raw": "{{gateway_url}}/health" } }
+        },
+        {
+          "name": "Order Service — Health",
+          "request": { "method": "GET", "url": { "raw": "{{order_url}}/health" } }
+        },
+        {
+          "name": "Payment Service — Health",
+          "request": { "method": "GET", "url": { "raw": "{{payment_url}}/health" } }
+        },
+        {
+          "name": "Fraud Service — Health",
+          "request": { "method": "GET", "url": { "raw": "{{fraud_url}}/health" } }
+        },
+        {
+          "name": "Account Service — Health",
+          "request": { "method": "GET", "url": { "raw": "{{account_url}}/health" } }
+        },
+        {
+          "name": "Loan Service — Health",
+          "request": { "method": "GET", "url": { "raw": "{{loan_url}}/health" } }
+        },
+        {
+          "name": "Notification Service — Health",
+          "request": { "method": "GET", "url": { "raw": "{{notification_url}}/health" } }
+        },
+        {
+          "name": "API Gateway — Prometheus Metrics",
+          "request": { "method": "GET", "url": { "raw": "{{gateway_url}}/metrics" } }
+        },
+        {
+          "name": "Order Service — Prometheus Metrics",
+          "request": { "method": "GET", "url": { "raw": "{{order_url}}/metrics" } }
+        }
+      ]
+    },
+    {
+      "name": "API Gateway — Original Workloads",
+      "item": [
+        {
+          "name": "CPU (Fibonacci)",
+          "request": { "method": "GET", "url": { "raw": "{{gateway_url}}/cpu" } }
+        },
+        {
+          "name": "Memory Allocation",
+          "request": { "method": "GET", "url": { "raw": "{{gateway_url}}/alloc" } }
+        },
+        {
+          "name": "Slow I/O",
+          "request": { "method": "GET", "url": { "raw": "{{gateway_url}}/slow" } }
+        },
+        {
+          "name": "Database Simulation",
+          "request": { "method": "GET", "url": { "raw": "{{gateway_url}}/db" } }
+        },
+        {
+          "name": "Mixed Workload",
+          "request": { "method": "GET", "url": { "raw": "{{gateway_url}}/mixed" } }
+        }
+      ]
+    },
+    {
+      "name": "API Gateway — Redis Simulation",
+      "item": [
+        {
+          "name": "Redis SET",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gateway_url}}/redis/set?key=test-key&value=hello-world",
+              "query": [
+                { "key": "key", "value": "test-key" },
+                { "key": "value", "value": "hello-world" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Redis GET",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gateway_url}}/redis/get?key=test-key",
+              "query": [{ "key": "key", "value": "test-key" }]
+            }
+          }
+        },
+        {
+          "name": "Redis SCAN",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gateway_url}}/redis/scan?pattern=test-.*",
+              "query": [{ "key": "pattern", "value": "test-.*" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "API Gateway — Database Simulation",
+      "item": [
+        {
+          "name": "DB SELECT",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gateway_url}}/db/select?region=region-3",
+              "query": [{ "key": "region", "value": "region-3" }]
+            }
+          }
+        },
+        {
+          "name": "DB INSERT",
+          "request": { "method": "GET", "url": { "raw": "{{gateway_url}}/db/insert" } }
+        },
+        {
+          "name": "DB JOIN (heavy)",
+          "request": { "method": "GET", "url": { "raw": "{{gateway_url}}/db/join" } }
+        }
+      ]
+    },
+    {
+      "name": "API Gateway — Data Processing",
+      "item": [
+        {
+          "name": "CSV Process",
+          "request": { "method": "GET", "url": { "raw": "{{gateway_url}}/csv/process" } }
+        },
+        {
+          "name": "JSON Serialize + Parse",
+          "request": { "method": "GET", "url": { "raw": "{{gateway_url}}/json/process" } }
+        },
+        {
+          "name": "XML Serialize",
+          "request": { "method": "GET", "url": { "raw": "{{gateway_url}}/xml/process" } }
+        }
+      ]
+    },
+    {
+      "name": "API Gateway — HTTP Client Simulation",
+      "item": [
+        {
+          "name": "Downstream Call",
+          "request": { "method": "GET", "url": { "raw": "{{gateway_url}}/downstream/call" } }
+        },
+        {
+          "name": "Downstream Fan-out (heavy)",
+          "request": { "method": "GET", "url": { "raw": "{{gateway_url}}/downstream/fanout" } }
+        }
+      ]
+    },
+    {
+      "name": "API Gateway — Batch Processing",
+      "item": [
+        {
+          "name": "Batch Process 50K records (heavy)",
+          "request": { "method": "GET", "url": { "raw": "{{gateway_url}}/batch/process" } }
+        }
+      ]
+    },
+    {
+      "name": "Order Service",
+      "item": [
+        {
+          "name": "Create Order",
+          "request": { "method": "GET", "url": { "raw": "{{order_url}}/order/create" } }
+        },
+        {
+          "name": "List Orders",
+          "request": { "method": "GET", "url": { "raw": "{{order_url}}/order/list" } }
+        },
+        {
+          "name": "Validate Orders",
+          "request": { "method": "GET", "url": { "raw": "{{order_url}}/order/validate" } }
+        },
+        {
+          "name": "Process Orders (lock contention)",
+          "request": { "method": "GET", "url": { "raw": "{{order_url}}/order/process" } }
+        },
+        {
+          "name": "Aggregate Orders",
+          "request": { "method": "GET", "url": { "raw": "{{order_url}}/order/aggregate" } }
+        },
+        {
+          "name": "Fulfill Order (fan-out)",
+          "request": { "method": "GET", "url": { "raw": "{{order_url}}/order/fulfill" } }
+        }
+      ]
+    },
+    {
+      "name": "Payment Service",
+      "item": [
+        {
+          "name": "Transfer",
+          "request": { "method": "GET", "url": { "raw": "{{payment_url}}/payment/transfer" } }
+        },
+        {
+          "name": "Payroll",
+          "request": { "method": "GET", "url": { "raw": "{{payment_url}}/payment/payroll" } }
+        },
+        {
+          "name": "FX Exchange",
+          "request": { "method": "GET", "url": { "raw": "{{payment_url}}/payment/fx" } }
+        },
+        {
+          "name": "Orchestrate",
+          "request": { "method": "GET", "url": { "raw": "{{payment_url}}/payment/orchestrate" } }
+        },
+        {
+          "name": "History",
+          "request": { "method": "GET", "url": { "raw": "{{payment_url}}/payment/history" } }
+        },
+        {
+          "name": "Reconcile",
+          "request": { "method": "GET", "url": { "raw": "{{payment_url}}/payment/reconcile" } }
+        }
+      ]
+    },
+    {
+      "name": "Fraud Service",
+      "item": [
+        {
+          "name": "Score",
+          "request": { "method": "GET", "url": { "raw": "{{fraud_url}}/fraud/score" } }
+        },
+        {
+          "name": "Ingest",
+          "request": { "method": "GET", "url": { "raw": "{{fraud_url}}/fraud/ingest" } }
+        },
+        {
+          "name": "Scan",
+          "request": { "method": "GET", "url": { "raw": "{{fraud_url}}/fraud/scan" } }
+        },
+        {
+          "name": "Anomaly",
+          "request": { "method": "GET", "url": { "raw": "{{fraud_url}}/fraud/anomaly" } }
+        },
+        {
+          "name": "Velocity",
+          "request": { "method": "GET", "url": { "raw": "{{fraud_url}}/fraud/velocity" } }
+        },
+        {
+          "name": "Report",
+          "request": { "method": "GET", "url": { "raw": "{{fraud_url}}/fraud/report" } }
+        }
+      ]
+    },
+    {
+      "name": "Account Service",
+      "item": [
+        {
+          "name": "Open Account",
+          "request": { "method": "GET", "url": { "raw": "{{account_url}}/account/open" } }
+        },
+        {
+          "name": "Balance",
+          "request": { "method": "GET", "url": { "raw": "{{account_url}}/account/balance" } }
+        },
+        {
+          "name": "Deposit",
+          "request": { "method": "GET", "url": { "raw": "{{account_url}}/account/deposit" } }
+        },
+        {
+          "name": "Withdraw",
+          "request": { "method": "GET", "url": { "raw": "{{account_url}}/account/withdraw" } }
+        },
+        {
+          "name": "Statement",
+          "request": { "method": "GET", "url": { "raw": "{{account_url}}/account/statement" } }
+        },
+        {
+          "name": "Interest",
+          "request": { "method": "GET", "url": { "raw": "{{account_url}}/account/interest" } }
+        },
+        {
+          "name": "Search",
+          "request": { "method": "GET", "url": { "raw": "{{account_url}}/account/search" } }
+        },
+        {
+          "name": "Branch Summary",
+          "request": { "method": "GET", "url": { "raw": "{{account_url}}/account/branch-summary" } }
+        }
+      ]
+    },
+    {
+      "name": "Loan Service",
+      "item": [
+        {
+          "name": "Apply",
+          "request": { "method": "GET", "url": { "raw": "{{loan_url}}/loan/apply" } }
+        },
+        {
+          "name": "Amortize",
+          "request": { "method": "GET", "url": { "raw": "{{loan_url}}/loan/amortize" } }
+        },
+        {
+          "name": "Risk Simulation",
+          "request": { "method": "GET", "url": { "raw": "{{loan_url}}/loan/risk-sim" } }
+        },
+        {
+          "name": "Portfolio",
+          "request": { "method": "GET", "url": { "raw": "{{loan_url}}/loan/portfolio" } }
+        },
+        {
+          "name": "Delinquency",
+          "request": { "method": "GET", "url": { "raw": "{{loan_url}}/loan/delinquency" } }
+        },
+        {
+          "name": "Originate",
+          "request": { "method": "GET", "url": { "raw": "{{loan_url}}/loan/originate" } }
+        }
+      ]
+    },
+    {
+      "name": "Notification Service",
+      "item": [
+        {
+          "name": "Send",
+          "request": { "method": "GET", "url": { "raw": "{{notification_url}}/notify/send" } }
+        },
+        {
+          "name": "Bulk",
+          "request": { "method": "GET", "url": { "raw": "{{notification_url}}/notify/bulk" } }
+        },
+        {
+          "name": "Drain",
+          "request": { "method": "GET", "url": { "raw": "{{notification_url}}/notify/drain" } }
+        },
+        {
+          "name": "Render",
+          "request": { "method": "GET", "url": { "raw": "{{notification_url}}/notify/render" } }
+        },
+        {
+          "name": "Status",
+          "request": { "method": "GET", "url": { "raw": "{{notification_url}}/notify/status" } }
+        },
+        {
+          "name": "Retry",
+          "request": { "method": "GET", "url": { "raw": "{{notification_url}}/notify/retry" } }
+        }
+      ]
+    },
+    {
+      "name": "Pyroscope API",
+      "item": [
+        {
+          "name": "Pyroscope Ready",
+          "request": { "method": "GET", "url": { "raw": "{{pyroscope_url}}/ready" } }
+        },
+        {
+          "name": "List Profile Types",
+          "request": { "method": "GET", "url": { "raw": "{{pyroscope_url}}/pyroscope/label-values?label=__name__" } }
+        },
+        {
+          "name": "List Services",
+          "request": { "method": "GET", "url": { "raw": "{{pyroscope_url}}/pyroscope/label-values?label=service_name" } }
+        },
+        {
+          "name": "Render CPU Profile (JSON)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{pyroscope_url}}/pyroscope/render?query=process_cpu:cpu:nanoseconds:cpu:nanoseconds%7Bservice_name%3D%22vertx-sample-app%22%7D&from=now-1h&until=now&format=json"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Prometheus API",
+      "item": [
+        {
+          "name": "Prometheus Ready",
+          "request": { "method": "GET", "url": { "raw": "{{prometheus_url}}/-/ready" } }
+        },
+        {
+          "name": "Scrape Targets",
+          "request": { "method": "GET", "url": { "raw": "{{prometheus_url}}/api/v1/targets" } }
+        },
+        {
+          "name": "Query — JVM CPU",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{prometheus_url}}/api/v1/query?query=rate(process_cpu_seconds_total[1m])",
+              "query": [{ "key": "query", "value": "rate(process_cpu_seconds_total[1m])" }]
+            }
+          }
+        },
+        {
+          "name": "Query — JVM Heap",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{prometheus_url}}/api/v1/query?query=jvm_memory_used_bytes{area=\"heap\"}",
+              "query": [{ "key": "query", "value": "jvm_memory_used_bytes{area=\"heap\"}" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Grafana API",
+      "item": [
+        {
+          "name": "Grafana Health",
+          "request": { "method": "GET", "url": { "raw": "{{grafana_url}}/api/health" } }
+        },
+        {
+          "name": "List Datasources",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{grafana_url}}/api/datasources" },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{grafana_user}}" },
+                { "key": "password", "value": "{{grafana_password}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Dashboards",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{grafana_url}}/api/search?type=dash-db" },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{grafana_user}}" },
+                { "key": "password", "value": "{{grafana_password}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Pyroscope Dashboard",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{grafana_url}}/api/dashboards/uid/pyroscope-java-overview" },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{grafana_user}}" },
+                { "key": "password", "value": "{{grafana_password}}" }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

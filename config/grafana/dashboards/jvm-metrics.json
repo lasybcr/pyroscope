@@ -1,0 +1,293 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 2,
+  "links": [
+    {
+      "title": "Pyroscope Overview",
+      "url": "/d/pyroscope-java-overview",
+      "type": "link",
+      "icon": "external link"
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "instance",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+        "query": "label_values(jvm_memory_used_bytes{job=\"vertx-apps\"}, instance)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": { "text": "All", "value": "$__all" },
+        "sort": 1
+      },
+      {
+        "name": "interval",
+        "type": "interval",
+        "query": "10s,30s,1m,5m",
+        "current": { "text": "1m", "value": "1m" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Process CPU Usage",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "rate(process_cpu_seconds_total{job=\"vertx-apps\", instance=~\"$instance\"}[$interval])",
+          "legendFormat": "{{instance}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": { "fillOpacity": 15, "lineWidth": 2 },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.5 },
+              { "color": "red", "value": 0.8 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "System CPU Usage",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "avg(rate(process_cpu_seconds_total{job=\"vertx-apps\", instance=~\"$instance\"}[1m]))",
+          "legendFormat": "avg CPU"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.5 },
+              { "color": "red", "value": 0.8 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Open File Descriptors",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 0 },
+      "targets": [
+        {
+          "expr": "process_open_fds{job=\"vertx-apps\", instance=~\"$instance\"}",
+          "legendFormat": "{{instance}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1000 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Heap Memory Used",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes{job=\"vertx-apps\", area=\"heap\", instance=~\"$instance\"}",
+          "legendFormat": "{{instance}} — {{id}}"
+        },
+        {
+          "expr": "jvm_memory_max_bytes{job=\"vertx-apps\", area=\"heap\", instance=~\"$instance\"}",
+          "legendFormat": "{{instance}} — {{id}} max"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": { "fillOpacity": 10, "lineWidth": 2 }
+        }
+      }
+    },
+    {
+      "id": 11,
+      "title": "Non-Heap Memory Used",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes{job=\"vertx-apps\", area=\"nonheap\", instance=~\"$instance\"}",
+          "legendFormat": "{{instance}} — {{id}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": { "fillOpacity": 10 }
+        }
+      }
+    },
+    {
+      "id": 20,
+      "title": "GC Pause Duration (rate)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "expr": "rate(jvm_gc_pause_seconds_sum{job=\"vertx-apps\", instance=~\"$instance\"}[$interval])",
+          "legendFormat": "{{instance}} — {{action}} {{cause}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "fillOpacity": 20, "drawStyle": "bars" }
+        }
+      }
+    },
+    {
+      "id": 21,
+      "title": "GC Pause Count (rate)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "targets": [
+        {
+          "expr": "rate(jvm_gc_pause_seconds_count{job=\"vertx-apps\", instance=~\"$instance\"}[$interval])",
+          "legendFormat": "{{instance}} — {{action}} {{cause}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": { "fillOpacity": 20, "drawStyle": "bars" }
+        }
+      }
+    },
+    {
+      "id": 30,
+      "title": "Live Threads",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 24 },
+      "targets": [
+        {
+          "expr": "jvm_threads_live_threads{job=\"vertx-apps\", instance=~\"$instance\"}",
+          "legendFormat": "{{instance}} live"
+        },
+        {
+          "expr": "jvm_threads_daemon_threads{job=\"vertx-apps\", instance=~\"$instance\"}",
+          "legendFormat": "{{instance}} daemon"
+        },
+        {
+          "expr": "jvm_threads_peak_threads{job=\"vertx-apps\", instance=~\"$instance\"}",
+          "legendFormat": "{{instance}} peak"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "fillOpacity": 5 }
+        }
+      }
+    },
+    {
+      "id": 31,
+      "title": "Classes Loaded",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 24 },
+      "targets": [
+        {
+          "expr": "jvm_classes_loaded_classes{job=\"vertx-apps\", instance=~\"$instance\"}",
+          "legendFormat": "{{instance}} loaded"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "fillOpacity": 5 }
+        }
+      }
+    },
+    {
+      "id": 32,
+      "title": "Process Uptime",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 24 },
+      "targets": [
+        {
+          "expr": "process_uptime_seconds{job=\"vertx-apps\", instance=~\"$instance\"}",
+          "legendFormat": "{{instance}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      }
+    },
+    {
+      "id": 40,
+      "title": "Memory Pool Utilization (%)",
+      "type": "bargauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 32 },
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes{job=\"vertx-apps\", instance=~\"$instance\"} / jvm_memory_max_bytes{job=\"vertx-apps\", instance=~\"$instance\"} > 0",
+          "legendFormat": "{{instance}} — {{id}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.7 },
+              { "color": "red", "value": 0.9 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient"
+      }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["jvm", "java", "vertx", "metrics"],
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "JVM Metrics Deep Dive",
+  "uid": "jvm-metrics-deep-dive"
+}

@@ -1,0 +1,22 @@
+target/
+*.class
+*.jar
+.idea/
+*.iml
+.DS_Store
+.gradle/
+build/
+.vscode/
+
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/.terraform.lock.hcl
+terraform/terraform.tfvars
+
+# Ansible
+ansible/*.retry
+
+# IDE / tool config
+.claude/
