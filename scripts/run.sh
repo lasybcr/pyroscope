@@ -53,15 +53,22 @@ fi
 # Cleanup handler — kill background load on exit
 # ---------------------------------------------------------------------------
 LOAD_PID=""
+INTERRUPTED=0
 cleanup() {
   if [ -n "$LOAD_PID" ] && kill -0 "$LOAD_PID" 2>/dev/null; then
     echo ""
     echo "Stopping background load generator (PID $LOAD_PID)..."
-    kill "$LOAD_PID" 2>/dev/null || true
+    # Kill the entire process group so child processes (curl, bash) also die
+    kill -- -"$LOAD_PID" 2>/dev/null || kill "$LOAD_PID" 2>/dev/null || true
     wait "$LOAD_PID" 2>/dev/null || true
+  fi
+  if [ "$INTERRUPTED" -eq 1 ]; then
+    echo "Interrupted. Services are still running."
+    echo "Run 'bash scripts/run.sh teardown' to stop containers."
   fi
 }
 trap cleanup EXIT
+trap 'INTERRUPTED=1; exit 130' INT TERM
 
 # ---------------------------------------------------------------------------
 # Stage runners
@@ -86,15 +93,16 @@ stage_load_background() {
   echo ""
   # Run initial timed load, then keep generating indefinitely so dashboards stay populated.
   # The trap handler kills this on exit/teardown.
-  (
-    bash "$SCRIPT_DIR/generate-load.sh" "$LOAD_DURATION"
-    echo ""
-    echo "===== Initial load complete. Restarting continuous load (Ctrl-C or teardown to stop) ====="
-    echo ""
+  # setsid creates a new process group so "kill -- -PID" kills all children.
+  setsid bash -c "
+    bash \"$SCRIPT_DIR/generate-load.sh\" \"$LOAD_DURATION\"
+    echo ''
+    echo '===== Initial load complete. Restarting continuous load (Ctrl-C or teardown to stop) ====='
+    echo ''
     while true; do
-      bash "$SCRIPT_DIR/generate-load.sh" 300 2>/dev/null || true
+      bash \"$SCRIPT_DIR/generate-load.sh\" 300 2>/dev/null || true
     done
-  ) &
+  " &
   LOAD_PID=$!
   echo "Load generator running in background (PID $LOAD_PID)"
   # Wait for initial load to build up enough data for validation
@@ -145,8 +153,11 @@ case "$COMMAND" in
     echo "Dashboards will keep receiving data."
     echo "Run 'bash scripts/run.sh teardown' or press Ctrl-C to stop."
     echo ""
-    # Keep the script alive so the background load continues
-    wait "$LOAD_PID" 2>/dev/null || true
+    # Keep the script alive so the background load continues.
+    # Loop around wait so SIGINT can interrupt it.
+    while kill -0 "$LOAD_PID" 2>/dev/null; do
+      wait "$LOAD_PID" 2>/dev/null || break
+    done
     ;;
   deploy)
     stage_deploy "1/1"
