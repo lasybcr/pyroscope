@@ -20,9 +20,6 @@ set -euo pipefail
 # to keep dashboards populated. Use "teardown" or Ctrl-C to stop.
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-COMPOSE_VOL_PREFIX="$(basename "$PROJECT_DIR")"
-GRAFANA_VOLUME="${COMPOSE_VOL_PREFIX}_grafana-data"
 
 # ---------------------------------------------------------------------------
 # Parse arguments
@@ -300,8 +297,6 @@ stage_teardown() {
   echo "===== Tearing down ====="
   echo ""
   bash "$SCRIPT_DIR/teardown.sh"
-  # Remove Grafana volume so plugin provisioning applies cleanly on next run
-  docker volume rm ${GRAFANA_VOLUME} 2>/dev/null || true
 }
 
 stage_benchmark() {
@@ -330,10 +325,9 @@ stage_health() {
 # ---------------------------------------------------------------------------
 case "$COMMAND" in
   all)
-    # Clean slate: tear down any existing containers and stale Grafana volume
-    # so plugin provisioning and dashboards always apply cleanly.
+    # Clean slate: full teardown (containers, volumes, local images, networks)
+    # so every run is idempotent and starts fresh.
     bash "$SCRIPT_DIR/teardown.sh" >/dev/null 2>&1 || true
-    docker volume rm ${GRAFANA_VOLUME} 2>/dev/null || true
 
     if [ "$VERBOSE" -eq 1 ]; then
       stage_deploy          "1/3"
