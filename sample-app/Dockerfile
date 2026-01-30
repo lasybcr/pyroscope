@@ -25,11 +25,17 @@ FROM eclipse-temurin:11-jre
 
 WORKDIR /app
 
-# Download the Pyroscope Java agent – this is the only profiling dependency.
-# No application code changes are required.
+# Download the Pyroscope Java agent – profiling dependency (zero code changes).
 RUN mkdir -p /opt/pyroscope && \
     curl -fSL "https://github.com/grafana/pyroscope-java/releases/download/v0.14.0/pyroscope.jar" \
          -o /opt/pyroscope/pyroscope.jar
+
+# Download the Prometheus JMX Exporter agent – exposes JVM metrics (heap, GC,
+# threads, CPU) as Prometheus metrics on port 9404. Zero code changes required.
+RUN mkdir -p /opt/jmx-exporter && \
+    curl -fSL "https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/1.0.1/jmx_prometheus_javaagent-1.0.1.jar" \
+         -o /opt/jmx-exporter/jmx_prometheus_javaagent.jar
+COPY jmx-exporter-config.yml /opt/jmx-exporter/config.yml
 
 COPY --from=builder /app/build/libs/vertx-app-1.0.0-fat.jar /app/app.jar
 

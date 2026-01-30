@@ -17,11 +17,11 @@
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
       "targets": [
         {
-          "expr": "process_cpu_usage{job=\"vertx-apps\", instance=\"api-gateway:8080\"}",
+          "expr": "rate(process_cpu_seconds_total{job=\"jvm\", instance=\"api-gateway:9404\"}[1m])",
           "legendFormat": "API Gateway"
         },
         {
-          "expr": "process_cpu_usage{job=\"vertx-apps\", instance=\"order-service:8080\"}",
+          "expr": "rate(process_cpu_seconds_total{job=\"jvm\", instance=\"order-service:9404\"}[1m])",
           "legendFormat": "Order Service"
         }
       ],
@@ -37,11 +37,11 @@
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
       "targets": [
         {
-          "expr": "sum by (instance) (jvm_memory_used_bytes{job=\"vertx-apps\", area=\"heap\", instance=\"api-gateway:8080\"})",
+          "expr": "sum by (instance) (jvm_memory_bytes_used{job=\"jvm\", area=\"heap\", instance=\"api-gateway:9404\"})",
           "legendFormat": "API Gateway heap"
         },
         {
-          "expr": "sum by (instance) (jvm_memory_used_bytes{job=\"vertx-apps\", area=\"heap\", instance=\"order-service:8080\"})",
+          "expr": "sum by (instance) (jvm_memory_bytes_used{job=\"jvm\", area=\"heap\", instance=\"order-service:9404\"})",
           "legendFormat": "Order Service heap"
         }
       ],
@@ -57,11 +57,11 @@
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
       "targets": [
         {
-          "expr": "rate(jvm_gc_pause_seconds_sum{job=\"vertx-apps\", instance=\"api-gateway:8080\"}[1m])",
+          "expr": "rate(jvm_gc_collection_seconds_sum{job=\"jvm\", instance=\"api-gateway:9404\"}[1m])",
           "legendFormat": "API Gateway — {{action}}"
         },
         {
-          "expr": "rate(jvm_gc_pause_seconds_sum{job=\"vertx-apps\", instance=\"order-service:8080\"}[1m])",
+          "expr": "rate(jvm_gc_collection_seconds_sum{job=\"jvm\", instance=\"order-service:9404\"}[1m])",
           "legendFormat": "Order Service — {{action}}"
         }
       ],
@@ -77,11 +77,11 @@
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
       "targets": [
         {
-          "expr": "jvm_threads_live_threads{job=\"vertx-apps\", instance=\"api-gateway:8080\"}",
+          "expr": "jvm_threads_current{job=\"jvm\", instance=\"api-gateway:9404\"}",
           "legendFormat": "API Gateway threads"
         },
         {
-          "expr": "jvm_threads_live_threads{job=\"vertx-apps\", instance=\"order-service:8080\"}",
+          "expr": "jvm_threads_current{job=\"jvm\", instance=\"order-service:9404\"}",
           "legendFormat": "Order Service threads"
         }
       ],

@@ -2,7 +2,7 @@ groups:
   - name: jvm_alerts
     rules:
       - alert: HighCpuUsage
-        expr: process_cpu_usage{job="vertx-apps"} > 0.8
+        expr: rate(process_cpu_seconds_total{job="jvm"}[2m]) > 0.8
         for: 1m
         labels:
           severity: warning
@@ -12,7 +12,7 @@ groups:
           runbook: "Check Pyroscope CPU flame graph for hot methods. See docs/runbook.md#high-cpu"
 
       - alert: HighHeapUsage
-        expr: jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"} > 0.85
+        expr: jvm_memory_bytes_used{job="jvm", area="heap"} / jvm_memory_bytes_max{job="jvm", area="heap"} > 0.85
         for: 2m
         labels:
           severity: warning
@@ -22,7 +22,7 @@ groups:
           runbook: "Check Pyroscope memory allocation flame graph. See docs/runbook.md#high-memory"
 
       - alert: HighGcPauseRate
-        expr: rate(jvm_gc_pause_seconds_sum{job="vertx-apps"}[2m]) > 0.05
+        expr: rate(jvm_gc_collection_seconds_sum{job="jvm"}[2m]) > 0.05
         for: 1m
         labels:
           severity: warning
@@ -41,7 +41,7 @@ groups:
           description: "Error rate is {{ $value | humanizePercentage }}"
 
       - alert: HighLatency
-        expr: vertx_http_server_response_time_seconds_max{job="vertx-apps"} > 2
+        expr: vertx_http_server_response_time_seconds_max{job="vertx-apps"} > 2.0
         for: 2m
         labels:
           severity: warning

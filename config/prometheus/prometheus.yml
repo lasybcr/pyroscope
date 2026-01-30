@@ -45,3 +45,37 @@ scrape_configs:
         labels:
           group: "vertx"
           verticle: "notification"
+
+  # JVM metrics via JMX Exporter agent (port 9404) — heap, GC, threads, CPU.
+  # Zero code changes: attached as a Java agent via JAVA_TOOL_OPTIONS.
+  - job_name: "jvm"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["api-gateway:9404"]
+        labels:
+          group: "vertx"
+          verticle: "api-gateway"
+      - targets: ["order-service:9404"]
+        labels:
+          group: "vertx"
+          verticle: "order"
+      - targets: ["payment-service:9404"]
+        labels:
+          group: "vertx"
+          verticle: "payment"
+      - targets: ["fraud-service:9404"]
+        labels:
+          group: "vertx"
+          verticle: "fraud"
+      - targets: ["account-service:9404"]
+        labels:
+          group: "vertx"
+          verticle: "account"
+      - targets: ["loan-service:9404"]
+        labels:
+          group: "vertx"
+          verticle: "loan"
+      - targets: ["notification-service:9404"]
+        labels:
+          group: "vertx"
+          verticle: "notification"

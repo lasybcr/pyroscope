@@ -1,12 +1,6 @@
 package com.example;
 
 import com.example.handlers.*;
-import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics;
-import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
-import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
-import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
-import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
-import io.micrometer.core.instrument.binder.system.UptimeMetrics;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.vertx.core.AbstractVerticle;
@@ -33,12 +27,6 @@ public class MainVerticle extends AbstractVerticle {
 
     public static void main(String[] args) {
         PrometheusMeterRegistry registry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
-        new JvmMemoryMetrics().bindTo(registry);
-        new JvmGcMetrics().bindTo(registry);
-        new JvmThreadMetrics().bindTo(registry);
-        new ClassLoaderMetrics().bindTo(registry);
-        new ProcessorMetrics().bindTo(registry);
-        new UptimeMetrics().bindTo(registry);
 
         VertxOptions options = new VertxOptions()
                 .setMetricsOptions(new MicrometerMetricsOptions()

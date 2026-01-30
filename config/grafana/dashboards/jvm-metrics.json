@@ -16,7 +16,7 @@
         "name": "instance",
         "type": "query",
         "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
-        "query": "label_values(jvm_memory_used_bytes{job=\"vertx-apps\"}, instance)",
+        "query": "label_values(jvm_memory_bytes_used{job=\"jvm\"}, instance)",
         "refresh": 2,
         "includeAll": true,
         "multi": true,
@@ -40,7 +40,7 @@
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
       "targets": [
         {
-          "expr": "process_cpu_usage{job=\"vertx-apps\", instance=~\"$instance\"}",
+          "expr": "rate(process_cpu_seconds_total{job=\"jvm\", instance=~\"$instance\"}[$interval])",
           "legendFormat": "{{instance}}"
         }
       ],
@@ -67,7 +67,7 @@
       "gridPos": { "h": 8, "w": 6, "x": 12, "y": 0 },
       "targets": [
         {
-          "expr": "avg(process_cpu_usage{job=\"vertx-apps\", instance=~\"$instance\"})",
+          "expr": "avg(rate(process_cpu_seconds_total{job=\"jvm\", instance=~\"$instance\"}[1m]))",
           "legendFormat": "avg CPU"
         }
       ],
@@ -89,13 +89,13 @@
     },
     {
       "id": 3,
-      "title": "Available Processors",
+      "title": "Open File Descriptors",
       "type": "stat",
       "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
       "gridPos": { "h": 8, "w": 6, "x": 18, "y": 0 },
       "targets": [
         {
-          "expr": "system_cpu_count{job=\"vertx-apps\", instance=~\"$instance\"}",
+          "expr": "process_open_fds{job=\"jvm\", instance=~\"$instance\"}",
           "legendFormat": "{{instance}}"
         }
       ],
@@ -104,7 +104,7 @@
           "thresholds": {
             "steps": [
               { "color": "green", "value": null },
-              { "color": "yellow", "value": 8 }
+              { "color": "red", "value": 1000 }
             ]
           }
         }
@@ -118,12 +118,12 @@
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
       "targets": [
         {
-          "expr": "jvm_memory_used_bytes{job=\"vertx-apps\", area=\"heap\", instance=~\"$instance\"}",
-          "legendFormat": "{{instance}} — {{id}}"
+          "expr": "jvm_memory_bytes_used{job=\"jvm\", area=\"heap\", instance=~\"$instance\"}",
+          "legendFormat": "{{instance}} used"
         },
         {
-          "expr": "jvm_memory_max_bytes{job=\"vertx-apps\", area=\"heap\", instance=~\"$instance\"}",
-          "legendFormat": "{{instance}} — {{id}} max"
+          "expr": "jvm_memory_bytes_max{job=\"jvm\", area=\"heap\", instance=~\"$instance\"}",
+          "legendFormat": "{{instance}} max"
         }
       ],
       "fieldConfig": {
@@ -141,8 +141,8 @@
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
       "targets": [
         {
-          "expr": "jvm_memory_used_bytes{job=\"vertx-apps\", area=\"nonheap\", instance=~\"$instance\"}",
-          "legendFormat": "{{instance}} — {{id}}"
+          "expr": "jvm_memory_bytes_used{job=\"jvm\", area=\"nonheap\", instance=~\"$instance\"}",
+          "legendFormat": "{{instance}} used"
         }
       ],
       "fieldConfig": {
@@ -154,14 +154,14 @@
     },
     {
       "id": 20,
-      "title": "GC Pause Duration (rate)",
+      "title": "GC Collection Duration (rate)",
       "type": "timeseries",
       "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
       "targets": [
         {
-          "expr": "rate(jvm_gc_pause_seconds_sum{job=\"vertx-apps\", instance=~\"$instance\"}[$interval])",
-          "legendFormat": "{{instance}} — {{action}} {{cause}}"
+          "expr": "rate(jvm_gc_collection_seconds_sum{job=\"jvm\", instance=~\"$instance\"}[$interval])",
+          "legendFormat": "{{instance}} — {{gc}}"
         }
       ],
       "fieldConfig": {
@@ -173,14 +173,14 @@
     },
     {
       "id": 21,
-      "title": "GC Pause Count (rate)",
+      "title": "GC Collection Count (rate)",
       "type": "timeseries",
       "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
       "targets": [
         {
-          "expr": "rate(jvm_gc_pause_seconds_count{job=\"vertx-apps\", instance=~\"$instance\"}[$interval])",
-          "legendFormat": "{{instance}} — {{action}} {{cause}}"
+          "expr": "rate(jvm_gc_collection_seconds_count{job=\"jvm\", instance=~\"$instance\"}[$interval])",
+          "legendFormat": "{{instance}} — {{gc}}"
         }
       ],
       "fieldConfig": {
@@ -198,15 +198,15 @@
       "gridPos": { "h": 8, "w": 8, "x": 0, "y": 24 },
       "targets": [
         {
-          "expr": "jvm_threads_live_threads{job=\"vertx-apps\", instance=~\"$instance\"}",
-          "legendFormat": "{{instance}} live"
+          "expr": "jvm_threads_current{job=\"jvm\", instance=~\"$instance\"}",
+          "legendFormat": "{{instance}} current"
         },
         {
-          "expr": "jvm_threads_daemon_threads{job=\"vertx-apps\", instance=~\"$instance\"}",
+          "expr": "jvm_threads_daemon{job=\"jvm\", instance=~\"$instance\"}",
           "legendFormat": "{{instance}} daemon"
         },
         {
-          "expr": "jvm_threads_peak_threads{job=\"vertx-apps\", instance=~\"$instance\"}",
+          "expr": "jvm_threads_peak{job=\"jvm\", instance=~\"$instance\"}",
           "legendFormat": "{{instance}} peak"
         }
       ],
@@ -224,7 +224,7 @@
       "gridPos": { "h": 8, "w": 8, "x": 8, "y": 24 },
       "targets": [
         {
-          "expr": "jvm_classes_loaded_classes{job=\"vertx-apps\", instance=~\"$instance\"}",
+          "expr": "jvm_classes_currently_loaded{job=\"jvm\", instance=~\"$instance\"}",
           "legendFormat": "{{instance}} loaded"
         }
       ],
@@ -242,7 +242,7 @@
       "gridPos": { "h": 8, "w": 8, "x": 16, "y": 24 },
       "targets": [
         {
-          "expr": "process_uptime_seconds{job=\"vertx-apps\", instance=~\"$instance\"}",
+          "expr": "time() - process_start_time_seconds{job=\"jvm\", instance=~\"$instance\"}",
           "legendFormat": "{{instance}}"
         }
       ],
@@ -260,8 +260,8 @@
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 32 },
       "targets": [
         {
-          "expr": "jvm_memory_used_bytes{job=\"vertx-apps\", instance=~\"$instance\"} / jvm_memory_max_bytes{job=\"vertx-apps\", instance=~\"$instance\"} > 0",
-          "legendFormat": "{{instance}} — {{id}}"
+          "expr": "jvm_memory_pool_bytes_used{job=\"jvm\", instance=~\"$instance\"} / jvm_memory_pool_bytes_max{job=\"jvm\", instance=~\"$instance\"} > 0",
+          "legendFormat": "{{instance}} — {{pool}}"
         }
       ],
       "fieldConfig": {

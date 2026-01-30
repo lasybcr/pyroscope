@@ -98,7 +98,7 @@
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 48 },
       "targets": [
         {
-          "expr": "process_cpu_usage{job=\"vertx-apps\"}",
+          "expr": "rate(process_cpu_seconds_total{job=\"jvm\"}[1m])",
           "legendFormat": "{{instance}}"
         }
       ],
@@ -117,8 +117,8 @@
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 48 },
       "targets": [
         {
-          "expr": "jvm_memory_used_bytes{job=\"vertx-apps\", area=\"heap\"}",
-          "legendFormat": "{{instance}} - {{id}}"
+          "expr": "jvm_memory_bytes_used{job=\"jvm\", area=\"heap\"}",
+          "legendFormat": "{{instance}}"
         }
       ],
       "fieldConfig": {
@@ -136,8 +136,8 @@
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 56 },
       "targets": [
         {
-          "expr": "rate(jvm_gc_pause_seconds_sum{job=\"vertx-apps\"}[1m])",
-          "legendFormat": "{{instance}} - {{action}}"
+          "expr": "rate(jvm_gc_collection_seconds_sum{job=\"jvm\"}[1m])",
+          "legendFormat": "{{instance}} - {{gc}}"
         }
       ],
       "fieldConfig": {

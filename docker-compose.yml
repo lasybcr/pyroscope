@@ -80,6 +80,7 @@ services:
         -Dpyroscope.labels.env=production
         -Dpyroscope.labels.service=api-gateway
         -Dpyroscope.log.level=info
+        -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=9404:/opt/jmx-exporter/config.yml
     depends_on:
       - pyroscope
     networks:
@@ -106,6 +107,7 @@ services:
         -Dpyroscope.labels.env=production
         -Dpyroscope.labels.service=order-service
         -Dpyroscope.log.level=info
+        -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=9404:/opt/jmx-exporter/config.yml
     depends_on:
       - pyroscope
     networks:
@@ -132,6 +134,7 @@ services:
         -Dpyroscope.labels.env=production
         -Dpyroscope.labels.service=payment-service
         -Dpyroscope.log.level=info
+        -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=9404:/opt/jmx-exporter/config.yml
     depends_on:
       - pyroscope
     networks:
@@ -158,6 +161,7 @@ services:
         -Dpyroscope.labels.env=production
         -Dpyroscope.labels.service=fraud-service
         -Dpyroscope.log.level=info
+        -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=9404:/opt/jmx-exporter/config.yml
     depends_on:
       - pyroscope
     networks:
@@ -184,6 +188,7 @@ services:
         -Dpyroscope.labels.env=production
         -Dpyroscope.labels.service=account-service
         -Dpyroscope.log.level=info
+        -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=9404:/opt/jmx-exporter/config.yml
     depends_on:
       - pyroscope
     networks:
@@ -210,6 +215,7 @@ services:
         -Dpyroscope.labels.env=production
         -Dpyroscope.labels.service=loan-service
         -Dpyroscope.log.level=info
+        -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=9404:/opt/jmx-exporter/config.yml
     depends_on:
       - pyroscope
     networks:
@@ -236,6 +242,7 @@ services:
         -Dpyroscope.labels.env=production
         -Dpyroscope.labels.service=notification-service
         -Dpyroscope.log.level=info
+        -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=9404:/opt/jmx-exporter/config.yml
     depends_on:
       - pyroscope
     networks:

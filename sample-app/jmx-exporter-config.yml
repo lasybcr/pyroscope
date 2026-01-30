@@ -1,0 +1,4 @@
+# Prometheus JMX Exporter configuration.
+# Default rules export standard JVM metrics: heap, GC, threads, CPU, classloading.
+# No custom rules needed — the built-in collectors cover all JVM MBeans.
+rules: []
