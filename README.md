@@ -6,9 +6,7 @@ A bank enterprise microservices demo with **7 Vert.x services** profiled by the 
 
 ```bash
 git clone <this-repo> && cd pyroscope
-bash scripts/deploy.sh             # builds + starts 10 containers
-bash scripts/generate-load.sh 120  # 2 min of traffic to all 7 services
-bash scripts/validate.sh           # checks everything works
+bash scripts/run.sh                # deploy + load + validate — single command
 # Open http://localhost:3000 (admin/admin) → dashboards are pre-loaded
 # Open http://localhost:4040 → select any bank-* service → flame graphs
 bash scripts/teardown.sh           # clean up
@@ -159,7 +157,21 @@ Each service has deliberately different CPU, memory, and lock characteristics so
 
 ## Quick Start
 
-### Option 1: Bash scripts (simplest)
+### Option 0: Single command (recommended)
+
+```bash
+bash scripts/run.sh                     # full pipeline: deploy → load (120s) → validate
+bash scripts/run.sh deploy              # deploy only
+bash scripts/run.sh load 60             # 60s of load
+bash scripts/run.sh validate            # validate only
+bash scripts/run.sh teardown            # clean up
+bash scripts/run.sh benchmark           # profiling overhead test
+bash scripts/run.sh --load-duration 60  # full pipeline with custom load duration
+```
+
+See [docs/pipeline.md](docs/pipeline.md) for details on each stage.
+
+### Option 1: Bash scripts (individual)
 
 ```bash
 bash scripts/deploy.sh             # build + start 10 containers
@@ -173,9 +185,12 @@ bash scripts/teardown.sh           # stop + clean
 ```bash
 cd ansible
 ansible-galaxy collection install community.docker
-ansible-playbook -i inventory.yml deploy.yml
-ansible-playbook -i inventory.yml generate-load.yml -e duration=120
-ansible-playbook -i inventory.yml teardown.yml
+ansible-playbook -i inventory.yml pipeline.yml                  # full pipeline
+ansible-playbook -i inventory.yml pipeline.yml --tags deploy    # deploy only
+ansible-playbook -i inventory.yml pipeline.yml --tags load      # load only
+ansible-playbook -i inventory.yml pipeline.yml --tags validate  # validate only
+ansible-playbook -i inventory.yml pipeline.yml -e duration=60   # custom load duration
+ansible-playbook -i inventory.yml teardown.yml                  # teardown
 ```
 
 ### Option 3: Terraform
@@ -237,6 +252,7 @@ Four pre-provisioned dashboards:
 | [docs/demo-guide.md](docs/demo-guide.md) | Step-by-step demo script (20-30 min) |
 | [docs/runbook.md](docs/runbook.md) | Operations runbook: deploy, verify, incident response, maintenance |
 | [docs/sample-queries.md](docs/sample-queries.md) | Copy-paste queries for Pyroscope, Grafana, Prometheus |
+| [docs/pipeline.md](docs/pipeline.md) | Pipeline stages, data flow, and configuration |
 
 ## Project Structure
 
@@ -265,6 +281,7 @@ pyroscope/
 │       ├── NotificationVerticle.java    # Messaging, templates, retries
 │       └── handlers/               # 6 additional workload handlers
 ├── scripts/
+│   ├── run.sh                      # Unified pipeline runner (recommended)
 │   ├── deploy.sh                   # Build + start + health checks
 │   ├── generate-load.sh            # Traffic to all 7 services
 │   ├── validate.sh                 # End-to-end automated check

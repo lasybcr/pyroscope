@@ -11,7 +11,7 @@
         "type": "query",
         "datasource": { "type": "grafana-pyroscope-datasource", "uid": "pyroscope-ds" },
         "query": { "type": "label_values", "label": "service_name" },
-        "current": { "text": "vertx-sample-app", "value": "vertx-sample-app" },
+        "current": { "text": "bank-api-gateway", "value": "bank-api-gateway" },
         "refresh": 2,
         "includeAll": false,
         "multi": false,
@@ -98,7 +98,7 @@
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 48 },
       "targets": [
         {
-          "expr": "rate(process_cpu_seconds_total{job=\"vertx-app\"}[1m])",
+          "expr": "rate(process_cpu_seconds_total{job=\"vertx-apps\"}[1m])",
           "legendFormat": "{{instance}}"
         }
       ],
@@ -117,7 +117,7 @@
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 48 },
       "targets": [
         {
-          "expr": "jvm_memory_used_bytes{job=\"vertx-app\", area=\"heap\"}",
+          "expr": "jvm_memory_used_bytes{job=\"vertx-apps\", area=\"heap\"}",
           "legendFormat": "{{instance}} - {{id}}"
         }
       ],
@@ -136,7 +136,7 @@
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 56 },
       "targets": [
         {
-          "expr": "rate(jvm_gc_pause_seconds_sum{job=\"vertx-app\"}[1m])",
+          "expr": "rate(jvm_gc_pause_seconds_sum{job=\"vertx-apps\"}[1m])",
           "legendFormat": "{{instance}} - {{action}}"
         }
       ],
@@ -155,7 +155,7 @@
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 56 },
       "targets": [
         {
-          "expr": "rate(http_server_requests_seconds_count{job=\"vertx-app\"}[1m])",
+          "expr": "rate(http_server_requests_seconds_count{job=\"vertx-apps\"}[1m])",
           "legendFormat": "{{method}} {{uri}}"
         }
       ],

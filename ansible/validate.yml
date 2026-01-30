@@ -1,0 +1,116 @@
+---
+# Validates the entire Pyroscope bank demo stack using Ansible.
+# Mirrors scripts/validate.sh using ansible.builtin.uri checks.
+#
+# Usage:
+#   ansible-playbook -i inventory.yml validate.yml
+
+- name: Validate Pyroscope demo stack
+  hosts: all
+  gather_facts: false
+
+  vars:
+    pyroscope_port: 4040
+    prometheus_port: 9090
+    grafana_port: 3000
+    api_gateway_port: 8080
+    order_service_port: 8081
+    payment_service_port: 8082
+    fraud_service_port: 8083
+    account_service_port: 8084
+    loan_service_port: 8085
+    notification_service_port: 8086
+
+    dashboard_uids:
+      - pyroscope-java-overview
+      - jvm-metrics-deep-dive
+      - http-performance
+      - service-comparison
+
+    bank_services:
+      - { name: "API Gateway",    port: "{{ api_gateway_port }}",    path: /health }
+      - { name: "Order Service",  port: "{{ order_service_port }}",  path: /health }
+      - { name: "Payment Service", port: "{{ payment_service_port }}", path: /health }
+      - { name: "Fraud Service",  port: "{{ fraud_service_port }}",  path: /health }
+      - { name: "Account Service", port: "{{ account_service_port }}", path: /health }
+      - { name: "Loan Service",   port: "{{ loan_service_port }}",   path: /health }
+      - { name: "Notification Service", port: "{{ notification_service_port }}", path: /health }
+
+    sample_endpoints:
+      - { name: "/cpu",               url: "http://localhost:{{ api_gateway_port }}/cpu" }
+      - { name: "/order/create",      url: "http://localhost:{{ order_service_port }}/order/create" }
+      - { name: "/payment/transfer",  url: "http://localhost:{{ payment_service_port }}/payment/transfer" }
+      - { name: "/fraud/score",       url: "http://localhost:{{ fraud_service_port }}/fraud/score" }
+      - { name: "/account/balance",   url: "http://localhost:{{ account_service_port }}/account/balance" }
+      - { name: "/loan/apply",        url: "http://localhost:{{ loan_service_port }}/loan/apply" }
+      - { name: "/notify/send",       url: "http://localhost:{{ notification_service_port }}/notify/send" }
+
+  tasks:
+    # ------------------------------------------------------------------
+    # 1. Infrastructure
+    # ------------------------------------------------------------------
+    - name: "1. Infrastructure — Pyroscope"
+      ansible.builtin.uri:
+        url: "http://localhost:{{ pyroscope_port }}/ready"
+        status_code: 200
+      retries: 5
+      delay: 3
+
+    - name: "1. Infrastructure — Prometheus"
+      ansible.builtin.uri:
+        url: "http://localhost:{{ prometheus_port }}/-/ready"
+        status_code: 200
+      retries: 3
+      delay: 2
+
+    - name: "1. Infrastructure — Grafana"
+      ansible.builtin.uri:
+        url: "http://localhost:{{ grafana_port }}/api/health"
+        status_code: 200
+      retries: 3
+      delay: 2
+
+    # ------------------------------------------------------------------
+    # 2. Bank Services
+    # ------------------------------------------------------------------
+    - name: "2. Bank Services — {{ item.name }}"
+      ansible.builtin.uri:
+        url: "http://localhost:{{ item.port }}{{ item.path }}"
+        status_code: 200
+      loop: "{{ bank_services }}"
+      loop_control:
+        label: "{{ item.name }}"
+      retries: 5
+      delay: 2
+
+    # ------------------------------------------------------------------
+    # 3. Grafana Dashboards
+    # ------------------------------------------------------------------
+    - name: "3. Grafana Dashboards — {{ item }}"
+      ansible.builtin.uri:
+        url: "http://localhost:{{ grafana_port }}/api/dashboards/uid/{{ item }}"
+        status_code: 200
+        url_username: "{{ grafana_admin_user }}"
+        url_password: "{{ grafana_admin_password }}"
+        force_basic_auth: true
+      loop: "{{ dashboard_uids }}"
+      loop_control:
+        label: "{{ item }}"
+
+    # ------------------------------------------------------------------
+    # 4. Sample Endpoints
+    # ------------------------------------------------------------------
+    - name: "4. Sample Endpoints — {{ item.name }}"
+      ansible.builtin.uri:
+        url: "{{ item.url }}"
+        status_code: 200
+        timeout: 15
+      loop: "{{ sample_endpoints }}"
+      loop_control:
+        label: "{{ item.name }}"
+      retries: 2
+      delay: 2
+
+    - name: Validation summary
+      ansible.builtin.debug:
+        msg: "All validation checks passed."

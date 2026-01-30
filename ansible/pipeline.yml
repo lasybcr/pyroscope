@@ -1,0 +1,22 @@
+---
+# Unified pipeline playbook — runs deploy, load, and validate in sequence.
+# Use tags to run individual stages.
+#
+# Usage:
+#   ansible-playbook -i inventory.yml pipeline.yml                  # full pipeline
+#   ansible-playbook -i inventory.yml pipeline.yml --tags deploy    # deploy only
+#   ansible-playbook -i inventory.yml pipeline.yml --tags load      # load only
+#   ansible-playbook -i inventory.yml pipeline.yml --tags validate  # validate only
+#   ansible-playbook -i inventory.yml pipeline.yml -e duration=60   # custom load duration
+
+- name: "Stage 1: Deploy"
+  ansible.builtin.import_playbook: deploy.yml
+  tags: [deploy]
+
+- name: "Stage 2: Generate load"
+  ansible.builtin.import_playbook: generate-load.yml
+  tags: [load]
+
+- name: "Stage 3: Validate"
+  ansible.builtin.import_playbook: validate.yml
+  tags: [validate]

@@ -17,11 +17,11 @@
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
       "targets": [
         {
-          "expr": "rate(process_cpu_seconds_total{job=\"vertx-apps\", instance=~\"vertx-app:8080\"}[1m])",
+          "expr": "rate(process_cpu_seconds_total{job=\"vertx-apps\", instance=~\"api-gateway:8080\"}[1m])",
           "legendFormat": "MainVerticle (vertx-app)"
         },
         {
-          "expr": "rate(process_cpu_seconds_total{job=\"vertx-apps\", instance=~\"vertx-app-2:8080\"}[1m])",
+          "expr": "rate(process_cpu_seconds_total{job=\"vertx-apps\", instance=~\"order-service:8080\"}[1m])",
           "legendFormat": "OrderVerticle (vertx-app-2)"
         }
       ],
@@ -37,11 +37,11 @@
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
       "targets": [
         {
-          "expr": "sum by (instance) (jvm_memory_used_bytes{job=\"vertx-apps\", area=\"heap\", instance=~\"vertx-app:8080\"})",
+          "expr": "sum by (instance) (jvm_memory_used_bytes{job=\"vertx-apps\", area=\"heap\", instance=~\"api-gateway:8080\"})",
           "legendFormat": "MainVerticle heap"
         },
         {
-          "expr": "sum by (instance) (jvm_memory_used_bytes{job=\"vertx-apps\", area=\"heap\", instance=~\"vertx-app-2:8080\"})",
+          "expr": "sum by (instance) (jvm_memory_used_bytes{job=\"vertx-apps\", area=\"heap\", instance=~\"order-service:8080\"})",
           "legendFormat": "OrderVerticle heap"
         }
       ],
@@ -57,11 +57,11 @@
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
       "targets": [
         {
-          "expr": "rate(jvm_gc_pause_seconds_sum{job=\"vertx-apps\", instance=~\"vertx-app:8080\"}[1m])",
+          "expr": "rate(jvm_gc_pause_seconds_sum{job=\"vertx-apps\", instance=~\"api-gateway:8080\"}[1m])",
           "legendFormat": "MainVerticle — {{action}}"
         },
         {
-          "expr": "rate(jvm_gc_pause_seconds_sum{job=\"vertx-apps\", instance=~\"vertx-app-2:8080\"}[1m])",
+          "expr": "rate(jvm_gc_pause_seconds_sum{job=\"vertx-apps\", instance=~\"order-service:8080\"}[1m])",
           "legendFormat": "OrderVerticle — {{action}}"
         }
       ],
@@ -77,11 +77,11 @@
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
       "targets": [
         {
-          "expr": "jvm_threads_live_threads{job=\"vertx-apps\", instance=~\"vertx-app:8080\"}",
+          "expr": "jvm_threads_live_threads{job=\"vertx-apps\", instance=~\"api-gateway:8080\"}",
           "legendFormat": "MainVerticle threads"
         },
         {
-          "expr": "jvm_threads_live_threads{job=\"vertx-apps\", instance=~\"vertx-app-2:8080\"}",
+          "expr": "jvm_threads_live_threads{job=\"vertx-apps\", instance=~\"order-service:8080\"}",
           "legendFormat": "OrderVerticle threads"
         }
       ],
@@ -97,11 +97,11 @@
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 24 },
       "targets": [
         {
-          "expr": "sum(rate(http_server_requests_seconds_count{job=\"vertx-apps\", instance=~\"vertx-app:8080\"}[1m]))",
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"vertx-apps\", instance=~\"api-gateway:8080\"}[1m]))",
           "legendFormat": "MainVerticle req/s"
         },
         {
-          "expr": "sum(rate(http_server_requests_seconds_count{job=\"vertx-apps\", instance=~\"vertx-app-2:8080\"}[1m]))",
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"vertx-apps\", instance=~\"order-service:8080\"}[1m]))",
           "legendFormat": "OrderVerticle req/s"
         }
       ],
@@ -117,11 +117,11 @@
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 32 },
       "targets": [
         {
-          "expr": "sum(rate(http_server_requests_seconds_sum{job=\"vertx-apps\", instance=~\"vertx-app:8080\"}[1m])) / sum(rate(http_server_requests_seconds_count{job=\"vertx-apps\", instance=~\"vertx-app:8080\"}[1m]))",
+          "expr": "sum(rate(http_server_requests_seconds_sum{job=\"vertx-apps\", instance=~\"api-gateway:8080\"}[1m])) / sum(rate(http_server_requests_seconds_count{job=\"vertx-apps\", instance=~\"api-gateway:8080\"}[1m]))",
           "legendFormat": "MainVerticle avg"
         },
         {
-          "expr": "sum(rate(http_server_requests_seconds_sum{job=\"vertx-apps\", instance=~\"vertx-app-2:8080\"}[1m])) / sum(rate(http_server_requests_seconds_count{job=\"vertx-apps\", instance=~\"vertx-app-2:8080\"}[1m]))",
+          "expr": "sum(rate(http_server_requests_seconds_sum{job=\"vertx-apps\", instance=~\"order-service:8080\"}[1m])) / sum(rate(http_server_requests_seconds_count{job=\"vertx-apps\", instance=~\"order-service:8080\"}[1m]))",
           "legendFormat": "OrderVerticle avg"
         }
       ],
@@ -138,7 +138,7 @@
       "targets": [
         {
           "profileTypeId": "process_cpu:cpu:nanoseconds:cpu:nanoseconds",
-          "labelSelector": "{service_name=\"vertx-sample-app\"}"
+          "labelSelector": "{service_name=\"bank-api-gateway\"}"
         }
       ]
     },
@@ -151,7 +151,7 @@
       "targets": [
         {
           "profileTypeId": "process_cpu:cpu:nanoseconds:cpu:nanoseconds",
-          "labelSelector": "{service_name=\"vertx-order-service\"}"
+          "labelSelector": "{service_name=\"bank-order-service\"}"
         }
       ]
     }
