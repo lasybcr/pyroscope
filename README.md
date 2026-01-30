@@ -266,6 +266,7 @@ Four pre-provisioned dashboards:
 | [docs/runbook.md](docs/runbook.md) | Operations runbook: deploy, verify, incident response, maintenance |
 | [docs/sample-queries.md](docs/sample-queries.md) | Copy-paste queries for Pyroscope, Grafana, Prometheus |
 | [docs/pipeline.md](docs/pipeline.md) | Pipeline stages, data flow, and configuration |
+| [docs/incident-profiling-runbook.md](docs/incident-profiling-runbook.md) | Incident runbook: find the exact class/method causing CPU, memory, lock, or latency issues |
 | [docs/cli-observability.md](docs/cli-observability.md) | CLI observability: diagnose, monitor, and debug without a browser |
 | [docs/dashboard-guide.md](docs/dashboard-guide.md) | Dashboard guide, production debugging runbook, and queries |
 
