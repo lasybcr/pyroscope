@@ -127,7 +127,7 @@ echo ""
 echo "--- Phase 1: WITH Pyroscope agent ---"
 echo "    Starting services with profiling enabled..."
 cd "$PROJECT_DIR"
-docker compose down --remove-orphans > /dev/null 2>&1 || true
+docker compose down -v --remove-orphans > /dev/null 2>&1 || true
 docker compose up -d > /dev/null 2>&1
 
 echo "    Waiting for services to start..."
@@ -143,7 +143,7 @@ echo ""
 # ---------------------------------------------------------------------------
 echo "--- Phase 2: WITHOUT Pyroscope agent ---"
 echo "    Restarting services without profiling..."
-docker compose down > /dev/null 2>&1
+docker compose down -v > /dev/null 2>&1
 docker compose -f docker-compose.yml -f docker-compose.no-pyroscope.yml up -d > /dev/null 2>&1
 
 echo "    Waiting for services to start..."
@@ -184,6 +184,6 @@ echo ""
 
 # Restore services with Pyroscope
 echo "    Restoring services with Pyroscope agent..."
-docker compose down > /dev/null 2>&1
+docker compose down -v > /dev/null 2>&1
 docker compose up -d > /dev/null 2>&1
 echo "    Done. Services running with profiling enabled."

@@ -12,6 +12,16 @@
 
   tasks:
     # ------------------------------------------------------------------
+    # Clean previous run (idempotent — safe if nothing is running)
+    # ------------------------------------------------------------------
+    - name: Remove previous containers and volumes
+      community.docker.docker_compose_v2:
+        project_src: "{{ project_dir }}"
+        state: absent
+        remove_volumes: true
+      ignore_errors: true
+
+    # ------------------------------------------------------------------
     # Build
     # ------------------------------------------------------------------
     - name: Build app images

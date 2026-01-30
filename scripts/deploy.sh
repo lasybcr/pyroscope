@@ -89,10 +89,12 @@ resolve_port() {
 # ---------------------------------------------------------------------------
 # Check all ports and auto-resolve conflicts
 # ---------------------------------------------------------------------------
-# Stop any existing containers from a previous run (frees their ports)
-echo "==> Stopping any existing containers..."
+# Stop any existing containers and remove volumes from a previous run.
+# This ensures each deployment starts with a clean slate — no stale
+# Pyroscope profiles, Prometheus metrics, or cached Grafana dashboards.
+echo "==> Cleaning up previous deployment..."
 cd "$PROJECT_DIR"
-docker compose down --remove-orphans > /dev/null 2>&1 || true
+docker compose down -v --remove-orphans > /dev/null 2>&1 || true
 sleep 3  # give OS time to release ports
 
 echo "==> Checking port availability..."
