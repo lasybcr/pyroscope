@@ -7,3 +7,6 @@ apps:
   - type: grafana-pyroscope-datasource
     org_id: 1
     disabled: false
+  - type: grafana-llm-app
+    org_id: 1
+    disabled: false
