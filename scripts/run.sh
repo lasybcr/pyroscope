@@ -547,7 +547,7 @@ case "$COMMAND" in
     # Pyroscope: fetch runtime config via API, fall back to docker cp
     echo "--- Pyroscope ---"
     PYRO_URL="http://localhost:${PYROSCOPE_PORT:-4040}"
-    PYRO_CONFIG=$(curl -sf "$PYRO_URL/config" 2>/dev/null) || true
+    PYRO_CONFIG=$(curl -sf --max-time 5 "$PYRO_URL/config" 2>/dev/null) || true
     if [ -n "$PYRO_CONFIG" ]; then
       echo "$PYRO_CONFIG" > "$DUMP_DIR/pyroscope.yaml"
       cat "$DUMP_DIR/pyroscope.yaml"
@@ -565,7 +565,7 @@ case "$COMMAND" in
     # Prometheus: dump resolved config via API
     echo "--- Prometheus ---"
     PROM_URL="http://localhost:${PROMETHEUS_PORT:-9090}"
-    PROM_CONFIG=$(curl -sf "$PROM_URL/api/v1/status/config" 2>/dev/null \
+    PROM_CONFIG=$(curl -sf --max-time 5 "$PROM_URL/api/v1/status/config" 2>/dev/null \
       | jq -r '.data.yaml // empty' 2>/dev/null) || true
     if [ -n "$PROM_CONFIG" ]; then
       echo "$PROM_CONFIG"
@@ -580,7 +580,7 @@ case "$COMMAND" in
     # Grafana: dump datasources via API
     echo "--- Grafana Datasources ---"
     GF_URL="http://localhost:${GRAFANA_PORT:-3000}"
-    GF_DS=$(curl -sf -u "${GRAFANA_ADMIN_USER:-admin}:${GRAFANA_ADMIN_PASSWORD:-admin}" "$GF_URL/api/datasources" 2>/dev/null) || true
+    GF_DS=$(curl -sf --max-time 5 -u "${GRAFANA_ADMIN_USER:-admin}:${GRAFANA_ADMIN_PASSWORD:-admin}" "$GF_URL/api/datasources" 2>/dev/null) || true
     if [ -n "$GF_DS" ]; then
       echo "$GF_DS" | jq .
       echo "$GF_DS" | jq . > "$DUMP_DIR/grafana-datasources.json"
