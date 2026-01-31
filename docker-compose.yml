@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   # ---------------------------------------------------------------------------
   # Grafana Pyroscope – continuous profiling backend
