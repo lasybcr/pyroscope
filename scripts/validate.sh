@@ -59,9 +59,9 @@ echo "=== Pyroscope Bank Enterprise Validation ==="
 echo ""
 
 echo "1. Infrastructure"
-check_url "Pyroscope ready"    "http://localhost:${PY}/ready" --retry 3 --retry-delay 2 --retry-all-errors
-check_url "Prometheus ready"   "http://localhost:${PM}/-/ready" --retry 3 --retry-delay 2 --retry-all-errors
-check_url "Grafana health"     "http://localhost:${GF}/api/health" --retry 3 --retry-delay 2 --retry-all-errors
+check_url "Pyroscope ready"    "http://localhost:${PY}/ready" --retry 5 --retry-delay 3 --retry-all-errors
+check_url "Prometheus ready"   "http://localhost:${PM}/-/ready" --retry 5 --retry-delay 3 --retry-all-errors
+check_url "Grafana health"     "http://localhost:${GF}/api/health" --retry 5 --retry-delay 3 --retry-all-errors
 echo ""
 
 echo "2. Bank Services"
