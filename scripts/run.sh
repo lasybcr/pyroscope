@@ -161,12 +161,12 @@ run_load_stage_quiet() {
   local start_time
   start_time=$(date +%s)
 
-  (
-    bash "$SCRIPT_DIR/generate-load.sh" "$LOAD_DURATION"
+  setsid bash -c "
+    bash '$SCRIPT_DIR/generate-load.sh' '$LOAD_DURATION'
     while true; do
-      bash "$SCRIPT_DIR/generate-load.sh" 300 2>/dev/null || true
+      bash '$SCRIPT_DIR/generate-load.sh' 300 2>/dev/null || true
     done
-  ) > "$dest" 2>&1 &
+  " > "$dest" 2>&1 &
   LOAD_PID=$!
 
   local spin_chars='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
@@ -284,15 +284,21 @@ restart_with_optimized() {
 LOAD_PID=""
 INTERRUPTED=0
 cleanup() {
-  if [ -n "$LOAD_PID" ] && kill -0 "$LOAD_PID" 2>/dev/null; then
-    echo ""
-    echo "Stopping background load generator (PID $LOAD_PID)..."
-    kill "$LOAD_PID" 2>/dev/null || true
-    pkill -P "$LOAD_PID" 2>/dev/null || true
-    wait "$LOAD_PID" 2>/dev/null || true
+  # Suppress all output from dying child processes
+  exec 2>/dev/null
+
+  if [ -n "$LOAD_PID" ]; then
+    # Kill the entire process group: setsid session + generate-load.sh + all curls
+    kill -- -"$LOAD_PID" 2>/dev/null || kill "$LOAD_PID" 2>/dev/null || true
+    # Brief pause for processes to exit
+    sleep 0.5 2>/dev/null || true
   fi
+
+  # Restore stderr for final message
+  exec 2>&1
   if [ "$INTERRUPTED" -eq 1 ]; then
-    echo "Interrupted. Services are still running."
+    echo ""
+    echo "Stopped. Services are still running."
     echo "Run 'bash scripts/run.sh teardown' to stop containers."
   fi
 }
@@ -324,15 +330,15 @@ stage_load_background() {
   echo ""
   echo "===== [$1] Starting background load (${LOAD_DURATION}s initial, then continuous) ====="
   echo ""
-  (
-    bash "$SCRIPT_DIR/generate-load.sh" "$LOAD_DURATION"
-    echo ""
-    echo "===== Initial load complete. Restarting continuous load (Ctrl-C or teardown to stop) ====="
-    echo ""
+  setsid bash -c "
+    bash '$SCRIPT_DIR/generate-load.sh' '$LOAD_DURATION'
+    echo ''
+    echo '===== Initial load complete. Restarting continuous load (Ctrl-C or teardown to stop) ====='
+    echo ''
     while true; do
-      bash "$SCRIPT_DIR/generate-load.sh" 300 2>/dev/null || true
+      bash '$SCRIPT_DIR/generate-load.sh' 300 2>/dev/null || true
     done
-  ) &
+  " &
   LOAD_PID=$!
   echo "Load generator running in background (PID $LOAD_PID)"
   echo "Waiting ${LOAD_DURATION}s for initial load to complete..."
@@ -464,8 +470,10 @@ case "$COMMAND" in
     fi
 
     # Keep the script alive so the background load continues.
+    # setsid makes LOAD_PID a session leader (not our child), so use
+    # kill -0 polling instead of wait.
     while kill -0 "$LOAD_PID" 2>/dev/null; do
-      wait "$LOAD_PID" 2>/dev/null || break
+      sleep 2
     done
     ;;
   deploy)
