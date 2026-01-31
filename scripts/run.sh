@@ -21,6 +21,13 @@ set -euo pipefail
 # In the full pipeline ("all"), load generation runs in the background so the
 # pipeline is not blocked. After validation completes, load continues running
 # to keep dashboards populated. Use "teardown" or Ctrl-C to stop.
+#
+# Commands safe to run alongside a running stack (read-only):
+#   health, top, diagnose, bottleneck, validate, load, dump-config
+#
+# Commands that mutate the stack (will prompt for confirmation if running):
+#   all (teardown + redeploy), deploy (recreate), compare (restart services),
+#   teardown (stop all), benchmark (may restart)
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -366,6 +373,46 @@ stage_health() {
   echo ""
   bash "$SCRIPT_DIR/jvm-health.sh" "${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"}"
 }
+
+# ---------------------------------------------------------------------------
+# Guard: warn if mutating command targets a running stack
+# ---------------------------------------------------------------------------
+# Commands that only read from the running stack (safe to run anytime):
+#   dump-config, health, top, diagnose, bottleneck, validate, load
+# Commands that mutate the stack (will restart/stop containers):
+#   all, deploy, teardown, compare, benchmark
+
+stack_is_running() {
+  docker compose -f "$PROJECT_DIR/docker-compose.yml" ps --status running 2>/dev/null | grep -q "pyroscope" 2>/dev/null
+}
+
+case "$COMMAND" in
+  all|deploy|compare)
+    if stack_is_running; then
+      echo ""
+      echo "WARNING: Stack is already running."
+      echo "  '$COMMAND' will modify running containers."
+      echo ""
+      case "$COMMAND" in
+        all)     echo "  'all' tears down the entire stack and redeploys from scratch." ;;
+        deploy)  echo "  'deploy' will recreate containers (may cause downtime)." ;;
+        compare) echo "  'compare' will restart services with OPTIMIZED=true." ;;
+      esac
+      echo ""
+      echo "  Safe commands for a running stack:"
+      echo "    health, top, diagnose, bottleneck, validate, load, dump-config"
+      echo ""
+      read -r -p "  Continue? [y/N] " confirm
+      case "$confirm" in
+        [yY]|[yY][eE][sS]) ;;
+        *)
+          echo "  Aborted."
+          exit 0
+          ;;
+      esac
+    fi
+    ;;
+esac
 
 # ---------------------------------------------------------------------------
 # Execute
