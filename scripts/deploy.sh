@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eo pipefail
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
@@ -27,17 +27,23 @@ except OSError:
   fi
   # Method 2: lsof fallback
   if command -v lsof > /dev/null 2>&1; then
-    ! lsof -iTCP:"$port" -sTCP:LISTEN -P -n > /dev/null 2>&1
-    return $?
+    if lsof -iTCP:"$port" -sTCP:LISTEN -P -n > /dev/null 2>&1; then
+      return 1
+    fi
+    return 0
   fi
   # Method 3: ss/netstat fallback
   if command -v ss > /dev/null 2>&1; then
-    ! ss -tlnp 2>/dev/null | grep -q ":${port} "
-    return $?
+    if ss -tlnp 2>/dev/null | grep -q ":${port} "; then
+      return 1
+    fi
+    return 0
   fi
   if command -v netstat > /dev/null 2>&1; then
-    ! netstat -tlnp 2>/dev/null | grep -q ":${port} "
-    return $?
+    if netstat -tlnp 2>/dev/null | grep -q ":${port} "; then
+      return 1
+    fi
+    return 0
   fi
   return 0
 }
@@ -178,7 +184,7 @@ set +a
 
 echo ""
 echo "==> Bank Enterprise Services:"
-echo "    Grafana:        http://localhost:${GRAFANA_PORT}  (admin/admin)"
+echo "    Grafana:        http://localhost:${GRAFANA_PORT}  (${GRAFANA_ADMIN_USER:-admin}/${GRAFANA_ADMIN_PASSWORD:-admin})"
 echo "    Pyroscope:      http://localhost:${PYROSCOPE_PORT}"
 echo "    Prometheus:     http://localhost:${PROMETHEUS_PORT}"
 echo "    API Gateway:    http://localhost:${API_GATEWAY_PORT}"

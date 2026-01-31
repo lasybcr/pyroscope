@@ -42,10 +42,18 @@ while [ $# -gt 0 ]; do
     --top)
       shift
       TOP_N="${1:?--top requires a number}"
+      if ! [[ "$TOP_N" =~ ^[0-9]+$ ]]; then
+        echo "ERROR: --top must be a positive integer, got: $TOP_N"
+        exit 1
+      fi
       ;;
     --range)
       shift
       TIME_RANGE="${1:?--range requires a value like 1h, 30m}"
+      if ! [[ "$TIME_RANGE" =~ ^[0-9]+[smhd]$ ]]; then
+        echo "ERROR: --range must match format like 5m, 1h, 30s, got: $TIME_RANGE"
+        exit 1
+      fi
       ;;
     --user-code)
       USER_CODE_ONLY=1
@@ -95,13 +103,13 @@ else
   fi
 fi
 
-# Build parse_flamegraph.py arguments
-PARSE_ARGS="--top $TOP_N --app-prefix $APP_PREFIX"
+# Build parse_flamegraph.py arguments as array (SC2086)
+PARSE_ARGS=("--top" "$TOP_N" "--app-prefix" "$APP_PREFIX")
 if [ "$USER_CODE_ONLY" = "1" ]; then
-  PARSE_ARGS="$PARSE_ARGS --user-code"
+  PARSE_ARGS+=("--user-code")
 fi
 if [ -n "$FILTER_PREFIX" ]; then
-  PARSE_ARGS="$PARSE_ARGS --filter $FILTER_PREFIX"
+  PARSE_ARGS+=("--filter" "$FILTER_PREFIX")
 fi
 
 # Query and report
@@ -126,7 +134,7 @@ for profile in $PROFILES; do
       echo "  (no data or Pyroscope unreachable)"
       continue
     fi
-    echo "$RESULT" | PYTHONPATH="$SCRIPT_DIR/lib" python3 "$SCRIPT_DIR/lib/parse_flamegraph.py" --unit "$UNIT" $PARSE_ARGS
+    echo "$RESULT" | PYTHONPATH="$SCRIPT_DIR/lib" python3 "$SCRIPT_DIR/lib/parse_flamegraph.py" --unit "$UNIT" "${PARSE_ARGS[@]}"
   done
 done
 

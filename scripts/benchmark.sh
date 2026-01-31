@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eo pipefail
+set -euo pipefail
 
 # Benchmarks bank services WITH and WITHOUT the Pyroscope agent to measure
 # profiling overhead. Runs N requests against each service endpoint and
@@ -39,10 +39,10 @@ bench_run() {
 
   echo "service,endpoint,requests,errors,avg_ms,p50_ms,p95_ms,p99_ms,req_per_sec" > "$outfile"
 
-  set -f
-  local names=($SVC_NAMES)
-  local urls=($SVC_URLS)
-  set +f
+  local names=()
+  local urls=()
+  read -ra names <<< "$SVC_NAMES"
+  read -ra urls <<< "$SVC_URLS"
 
   local idx=0
   for svc in "${names[@]}"; do
@@ -50,7 +50,7 @@ bench_run() {
     idx=$((idx + 1))
 
     # Warmup
-    for i in $(seq 1 "$WARMUP"); do
+    for _i in $(seq 1 "$WARMUP"); do
       curl -sf -o /dev/null --max-time 10 "$url" 2>/dev/null || true
     done
 
@@ -59,7 +59,7 @@ bench_run() {
     tmpfile=$(mktemp)
     local errors=0
 
-    for i in $(seq 1 "$REQUESTS"); do
+    for _i in $(seq 1 "$REQUESTS"); do
       local t
       t=$(curl -sf -o /dev/null -w "%{time_total}" --max-time 15 "$url" 2>/dev/null) || { errors=$((errors + 1)); continue; }
       echo "$t * 1000" | bc 2>/dev/null >> "$tmpfile" || true
@@ -106,11 +106,10 @@ bench_run() {
 
 # ---------------------------------------------------------------------------
 wait_for_services() {
-  set -f
-  local health_urls=($SVC_HEALTH)
-  set +f
+  local health_urls=()
+  read -ra health_urls <<< "$SVC_HEALTH"
   for url in "${health_urls[@]}"; do
-    for attempt in $(seq 1 15); do
+    for _attempt in $(seq 1 15); do
       curl -sf -o /dev/null "$url" 2>/dev/null && break
       sleep 2
     done
@@ -164,7 +163,7 @@ WITHOUT_FILE="$RESULTS_DIR/${TIMESTAMP}-without-pyroscope.csv"
 printf "  %-25s %-12s %-12s %-10s\n" "SERVICE" "WITH (avg)" "WITHOUT (avg)" "OVERHEAD"
 printf "  %-25s %-12s %-12s %-10s\n" "-------" "----------" "-------------" "--------"
 
-while IFS=, read -r svc url reqs errs avg p50 p95 p99 rps; do
+while IFS=, read -r svc _url _reqs _errs avg _p50 _p95 _p99 _rps; do
   [ "$svc" = "service" ] && continue
   with_avg="$avg"
 

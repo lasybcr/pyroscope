@@ -39,13 +39,17 @@ REVERSE_MAP = {v: k for k, v in SVC_MAP.items()}
 
 def _fetch_json(url, method="GET", body=None, headers=None, timeout=DEFAULT_TIMEOUT):
     """Fetch JSON from a URL. Returns parsed dict or None on any error."""
+    # Only allow http/https schemes to prevent file:// or ftp:// access (B310)
+    if not url.startswith(("http://", "https://")):
+        logger.warning("Refusing non-HTTP URL: %s", url)
+        return None
     try:
         req = urllib.request.Request(url, method=method)
         if headers:
             for k, v in headers.items():
                 req.add_header(k, v)
         data = body.encode() if isinstance(body, str) else body
-        resp = urllib.request.urlopen(req, data=data, timeout=timeout)
+        resp = urllib.request.urlopen(req, data=data, timeout=timeout)  # nosec B310 - scheme validated above
         return json.loads(resp.read())
     except urllib.error.HTTPError as e:
         logger.warning("HTTP %d from %s", e.code, url)

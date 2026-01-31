@@ -244,7 +244,7 @@ print_ready_banner() {
   echo ""
   echo "  ✔ Ready! Data is flowing to all dashboards."
   echo ""
-  echo "    Grafana:    http://localhost:${gport}  (admin/admin)"
+  echo "    Grafana:    http://localhost:${gport}  (${GRAFANA_ADMIN_USER:-admin}/${GRAFANA_ADMIN_PASSWORD:-admin})"
   echo "    Pyroscope:  http://localhost:${pport}"
   echo "    Before vs After: http://localhost:${gport}/d/before-after-comparison"
   echo ""
@@ -270,7 +270,7 @@ restart_with_optimized() {
     api-gateway order-service payment-service fraud-service account-service loan-service notification-service
   # Wait for services to be healthy again
   for svc in api-gateway order-service payment-service fraud-service account-service loan-service notification-service; do
-    for attempt in $(seq 1 30); do
+    for _attempt in $(seq 1 30); do
       if docker compose ps "$svc" 2>/dev/null | grep -q "Up"; then
         break
       fi
@@ -570,7 +570,7 @@ case "$COMMAND" in
     # Grafana: dump datasources via API
     echo "--- Grafana Datasources ---"
     GF_URL="http://localhost:${GRAFANA_PORT:-3000}"
-    GF_DS=$(curl -sf -u admin:admin "$GF_URL/api/datasources" 2>/dev/null) || true
+    GF_DS=$(curl -sf -u "${GRAFANA_ADMIN_USER:-admin}:${GRAFANA_ADMIN_PASSWORD:-admin}" "$GF_URL/api/datasources" 2>/dev/null) || true
     if [ -n "$GF_DS" ]; then
       echo "$GF_DS" | jq .
       echo "$GF_DS" | jq . > "$DUMP_DIR/grafana-datasources.json"
