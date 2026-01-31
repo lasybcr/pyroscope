@@ -1,4 +1,4 @@
-# Profiling Scenarios — Finding Issues with Pyroscope in Grafana
+# Profiling Scenarios — Using Pyroscope in Grafana to Identify Performance Issues
 
 Step-by-step walkthroughs using Pyroscope flame graphs in Grafana to identify real performance issues. Each scenario follows the same pattern: notice a symptom in metrics, switch to the flame graph to find the root cause.
 
