@@ -12,35 +12,21 @@
   "templating": {
     "list": [
       {
-        "name": "server",
+        "name": "service",
         "type": "custom",
-        "label": "Server",
+        "label": "Service",
         "current": { "text": "All", "value": "$__all" },
         "options": [
           { "text": "All", "value": "$__all", "selected": true },
-          { "text": "vertx-server-1", "value": "vertx-server-1:8080", "selected": false },
-          { "text": "vertx-server-2", "value": "vertx-server-2:8080", "selected": false }
+          { "text": "api-gateway", "value": "api-gateway", "selected": false },
+          { "text": "order-service", "value": "order-service", "selected": false },
+          { "text": "payment-service", "value": "payment-service", "selected": false },
+          { "text": "fraud-service", "value": "fraud-service", "selected": false },
+          { "text": "account-service", "value": "account-service", "selected": false },
+          { "text": "loan-service", "value": "loan-service", "selected": false },
+          { "text": "notification-service", "value": "notification-service", "selected": false }
         ],
-        "query": "vertx-server-1:8080,vertx-server-2:8080",
-        "includeAll": true,
-        "allValue": "vertx-server-.*"
-      },
-      {
-        "name": "verticle",
-        "type": "custom",
-        "label": "Verticle",
-        "current": { "text": "All", "value": "$__all" },
-        "options": [
-          { "text": "All", "value": "$__all", "selected": true },
-          { "text": "main (gateway)", "value": "main", "selected": false },
-          { "text": "order", "value": "order", "selected": false },
-          { "text": "payment", "value": "payment", "selected": false },
-          { "text": "fraud", "value": "fraud", "selected": false },
-          { "text": "account", "value": "account", "selected": false },
-          { "text": "loan", "value": "loan", "selected": false },
-          { "text": "notification", "value": "notification", "selected": false }
-        ],
-        "query": "main,order,payment,fraud,account,loan,notification",
+        "query": "api-gateway,order-service,payment-service,fraud-service,account-service,loan-service,notification-service",
         "includeAll": true,
         "allValue": ".*"
       },
@@ -48,12 +34,17 @@
         "name": "pyroscope_app",
         "type": "custom",
         "label": "Pyroscope Application",
-        "current": { "text": "vertx-server-1", "value": "vertx-server-1" },
+        "current": { "text": "bank-api-gateway", "value": "bank-api-gateway" },
         "options": [
-          { "text": "vertx-server-1", "value": "vertx-server-1", "selected": true },
-          { "text": "vertx-server-2", "value": "vertx-server-2", "selected": false }
+          { "text": "bank-api-gateway", "value": "bank-api-gateway", "selected": true },
+          { "text": "bank-order-service", "value": "bank-order-service", "selected": false },
+          { "text": "bank-payment-service", "value": "bank-payment-service", "selected": false },
+          { "text": "bank-fraud-service", "value": "bank-fraud-service", "selected": false },
+          { "text": "bank-account-service", "value": "bank-account-service", "selected": false },
+          { "text": "bank-loan-service", "value": "bank-loan-service", "selected": false },
+          { "text": "bank-notification-service", "value": "bank-notification-service", "selected": false }
         ],
-        "query": "vertx-server-1,vertx-server-2"
+        "query": "bank-api-gateway,bank-order-service,bank-payment-service,bank-fraud-service,bank-account-service,bank-loan-service,bank-notification-service"
       },
       {
         "name": "profile_type",
@@ -73,25 +64,25 @@
   "panels": [
     {
       "id": 100,
-      "title": "Verticle → Server Mapping",
+      "title": "Service Architecture",
       "type": "text",
-      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
+      "gridPos": { "h": 3, "w": 24, "x": 0, "y": 0 },
       "options": {
         "mode": "markdown",
-        "content": "| Server | Verticles | Host Port | Pyroscope App |\n|--------|-----------|-----------|---------------|\n| **vertx-server-1** | main (gateway), order, payment, fraud | :18080 | `vertx-server-1` |\n| **vertx-server-2** | account, loan, notification | :18081 | `vertx-server-2` |\n\n> Verticles share a JVM — heap, GC, and threads are per-server, not per-verticle. Route-level metrics are the best way to isolate verticle behavior."
+        "content": "| Service | Verticle | Endpoints | Pyroscope App |\n|---------|----------|-----------|---------------|\n| **api-gateway** | MainVerticle | /cpu, /alloc, /redis, /json, /batch, /mixed | `bank-api-gateway` |\n| **order-service** | OrderVerticle | /order/create, /order/process | `bank-order-service` |\n| **payment-service** | PaymentVerticle | /payment/transfer, /payment/fx, /payment/orchestrate | `bank-payment-service` |\n| **fraud-service** | FraudDetectionVerticle | /fraud/score, /fraud/ingest, /fraud/anomaly | `bank-fraud-service` |\n| **account-service** | AccountVerticle | /account/balance, /account/deposit, /account/interest | `bank-account-service` |\n| **loan-service** | LoanVerticle | /loan/apply, /loan/amortize, /loan/risk-sim | `bank-loan-service` |\n| **notification-service** | NotificationVerticle | /notify/send, /notify/bulk, /notify/drain | `bank-notification-service` |"
       }
     },
     {
       "id": 1,
-      "title": "Request Rate by Verticle",
-      "description": "Routes grouped by verticle prefix. Select a verticle from the dropdown to filter.",
+      "title": "Request Rate by Service",
+      "description": "HTTP request rate per service, filtered by the Service dropdown.",
       "type": "timeseries",
       "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 3 },
       "targets": [
         {
-          "expr": "sum by (route) (rate(vertx_http_server_requests_total{job=\"vertx-apps\", instance=~\"$server\", route=~\"/$verticle/.*\"}[1m]))",
-          "legendFormat": "{{route}}"
+          "expr": "sum by (instance) (rate(vertx_http_server_requests_total{job=\"vertx-apps\", instance=~\"$service:8080\"}[1m]))",
+          "legendFormat": "{{instance}}"
         }
       ],
       "fieldConfig": {
@@ -100,15 +91,15 @@
     },
     {
       "id": 2,
-      "title": "Avg Latency by Verticle",
-      "description": "Average response time per route, filtered by verticle.",
+      "title": "Avg Latency by Service",
+      "description": "Average response time per service.",
       "type": "timeseries",
       "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 3 },
       "targets": [
         {
-          "expr": "sum by (route) (rate(vertx_http_server_response_time_seconds_sum{job=\"vertx-apps\", instance=~\"$server\", route=~\"/$verticle/.*\"}[1m])) / sum by (route) (rate(vertx_http_server_response_time_seconds_count{job=\"vertx-apps\", instance=~\"$server\", route=~\"/$verticle/.*\"}[1m]))",
-          "legendFormat": "{{route}}"
+          "expr": "sum by (instance) (rate(vertx_http_server_response_time_seconds_sum{job=\"vertx-apps\", instance=~\"$service:8080\"}[1m])) / sum by (instance) (rate(vertx_http_server_response_time_seconds_count{job=\"vertx-apps\", instance=~\"$service:8080\"}[1m]))",
+          "legendFormat": "{{instance}}"
         }
       ],
       "fieldConfig": {
@@ -117,70 +108,31 @@
     },
     {
       "id": 3,
-      "title": "Request Rate — Verticle Totals (Server 1)",
-      "description": "Total request rate grouped by verticle on server 1.",
-      "type": "barchart",
+      "title": "Request Rate by Route",
+      "description": "Per-route request rate across selected services.",
+      "type": "timeseries",
       "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 11 },
       "targets": [
         {
-          "expr": "sum(rate(vertx_http_server_requests_total{job=\"vertx-apps\", instance=\"vertx-server-1:8080\", route=~\"/order/.*\"}[5m]))",
-          "legendFormat": "order"
-        },
-        {
-          "expr": "sum(rate(vertx_http_server_requests_total{job=\"vertx-apps\", instance=\"vertx-server-1:8080\", route=~\"/payment/.*\"}[5m]))",
-          "legendFormat": "payment"
-        },
-        {
-          "expr": "sum(rate(vertx_http_server_requests_total{job=\"vertx-apps\", instance=\"vertx-server-1:8080\", route=~\"/fraud/.*\"}[5m]))",
-          "legendFormat": "fraud"
-        },
-        {
-          "expr": "sum(rate(vertx_http_server_requests_total{job=\"vertx-apps\", instance=\"vertx-server-1:8080\", route=~\"/(cpu|alloc|slow|db|mixed|sim|health|metrics|redis|json|xml|csv|batch|downstream)/.*|/(cpu|alloc|slow|db|mixed)\"}[5m]))",
-          "legendFormat": "main (gateway)"
+          "expr": "sum by (route) (rate(vertx_http_server_requests_total{job=\"vertx-apps\", instance=~\"$service:8080\", route!=\"\", route!~\"/health|/metrics\"}[1m]))",
+          "legendFormat": "{{route}}"
         }
       ],
       "fieldConfig": {
-        "defaults": { "unit": "reqps", "custom": { "fillOpacity": 80 } }
-      },
-      "options": { "orientation": "horizontal", "stacking": "none" }
-    },
-    {
-      "id": 4,
-      "title": "Request Rate — Verticle Totals (Server 2)",
-      "description": "Total request rate grouped by verticle on server 2.",
-      "type": "barchart",
-      "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
-      "targets": [
-        {
-          "expr": "sum(rate(vertx_http_server_requests_total{job=\"vertx-apps\", instance=\"vertx-server-2:8080\", route=~\"/account/.*\"}[5m]))",
-          "legendFormat": "account"
-        },
-        {
-          "expr": "sum(rate(vertx_http_server_requests_total{job=\"vertx-apps\", instance=\"vertx-server-2:8080\", route=~\"/loan/.*\"}[5m]))",
-          "legendFormat": "loan"
-        },
-        {
-          "expr": "sum(rate(vertx_http_server_requests_total{job=\"vertx-apps\", instance=\"vertx-server-2:8080\", route=~\"/notify/.*\"}[5m]))",
-          "legendFormat": "notification"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": { "unit": "reqps", "custom": { "fillOpacity": 80 } }
-      },
-      "options": { "orientation": "horizontal", "stacking": "none" }
+        "defaults": { "unit": "reqps", "custom": { "fillOpacity": 10, "lineWidth": 2 } }
+      }
     },
     {
       "id": 5,
-      "title": "Slowest Verticle Routes (Top 10)",
-      "description": "Routes with highest average latency across both servers.",
+      "title": "Slowest Routes (Top 10)",
+      "description": "Routes with highest average latency across all services.",
       "type": "bargauge",
       "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 19 },
       "targets": [
         {
-          "expr": "topk(10, sum by (route) (rate(vertx_http_server_response_time_seconds_sum{job=\"vertx-apps\", instance=~\"$server\"}[5m])) / sum by (route) (rate(vertx_http_server_response_time_seconds_count{job=\"vertx-apps\", instance=~\"$server\"}[5m])))",
+          "expr": "topk(10, sum by (route) (rate(vertx_http_server_response_time_seconds_sum{job=\"vertx-apps\", instance=~\"$service:8080\", route!=\"\", route!~\"/health|/metrics\"}[5m])) / sum by (route) (rate(vertx_http_server_response_time_seconds_count{job=\"vertx-apps\", instance=~\"$service:8080\", route!=\"\", route!~\"/health|/metrics\"}[5m])))",
           "legendFormat": "{{route}}"
         }
       ],
@@ -191,14 +143,14 @@
     },
     {
       "id": 6,
-      "title": "Error Rate by Verticle Route",
+      "title": "Error Rate by Route",
       "description": "5xx error rates grouped by route.",
       "type": "timeseries",
       "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 19 },
       "targets": [
         {
-          "expr": "sum by (route) (rate(vertx_http_server_requests_total{job=\"vertx-apps\", instance=~\"$server\", route=~\"/$verticle/.*\", code=~\"5..\"}[1m]))",
+          "expr": "sum by (route) (rate(vertx_http_server_requests_total{job=\"vertx-apps\", instance=~\"$service:8080\", route!=\"\", code=~\"5..\"}[1m]))",
           "legendFormat": "{{route}}"
         }
       ],
@@ -208,18 +160,14 @@
     },
     {
       "id": 10,
-      "title": "JVM CPU — Server 1 vs Server 2",
+      "title": "JVM CPU by Service",
       "type": "timeseries",
       "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
-      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 28 },
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 27 },
       "targets": [
         {
-          "expr": "rate(process_cpu_seconds_total{job=\"jvm\", instance=\"vertx-server-1:9404\"}[1m])",
-          "legendFormat": "Server 1 (main+order+payment+fraud)"
-        },
-        {
-          "expr": "rate(process_cpu_seconds_total{job=\"jvm\", instance=\"vertx-server-2:9404\"}[1m])",
-          "legendFormat": "Server 2 (account+loan+notification)"
+          "expr": "rate(process_cpu_seconds_total{job=\"jvm\", instance=~\"$service:9404\"}[1m])",
+          "legendFormat": "{{instance}}"
         }
       ],
       "fieldConfig": {
@@ -228,18 +176,14 @@
     },
     {
       "id": 11,
-      "title": "JVM Heap — Server 1 vs Server 2",
+      "title": "JVM Heap by Service",
       "type": "timeseries",
       "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
-      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 28 },
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 27 },
       "targets": [
         {
-          "expr": "sum(jvm_memory_used_bytes{job=\"jvm\", area=\"heap\", instance=\"vertx-server-1:9404\"})",
-          "legendFormat": "Server 1 heap"
-        },
-        {
-          "expr": "sum(jvm_memory_used_bytes{job=\"jvm\", area=\"heap\", instance=\"vertx-server-2:9404\"})",
-          "legendFormat": "Server 2 heap"
+          "expr": "sum by (instance) (jvm_memory_used_bytes{job=\"jvm\", area=\"heap\", instance=~\"$service:9404\"})",
+          "legendFormat": "{{instance}}"
         }
       ],
       "fieldConfig": {
@@ -248,18 +192,14 @@
     },
     {
       "id": 12,
-      "title": "GC Pause Rate — Server 1 vs Server 2",
+      "title": "GC Pause Rate by Service",
       "type": "timeseries",
       "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
-      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 35 },
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 34 },
       "targets": [
         {
-          "expr": "rate(jvm_gc_collection_seconds_sum{job=\"jvm\", instance=\"vertx-server-1:9404\"}[1m])",
-          "legendFormat": "Server 1 — {{gc}}"
-        },
-        {
-          "expr": "rate(jvm_gc_collection_seconds_sum{job=\"jvm\", instance=\"vertx-server-2:9404\"}[1m])",
-          "legendFormat": "Server 2 — {{gc}}"
+          "expr": "sum by (instance, gc) (rate(jvm_gc_collection_seconds_sum{job=\"jvm\", instance=~\"$service:9404\"}[1m]))",
+          "legendFormat": "{{instance}} — {{gc}}"
         }
       ],
       "fieldConfig": {
@@ -268,18 +208,14 @@
     },
     {
       "id": 13,
-      "title": "Thread Count — Server 1 vs Server 2",
+      "title": "Thread Count by Service",
       "type": "timeseries",
       "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
-      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 35 },
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 34 },
       "targets": [
         {
-          "expr": "jvm_threads_current{job=\"jvm\", instance=\"vertx-server-1:9404\"}",
-          "legendFormat": "Server 1 threads"
-        },
-        {
-          "expr": "jvm_threads_current{job=\"jvm\", instance=\"vertx-server-2:9404\"}",
-          "legendFormat": "Server 2 threads"
+          "expr": "jvm_threads_current{job=\"jvm\", instance=~\"$service:9404\"}",
+          "legendFormat": "{{instance}}"
         }
       ],
       "fieldConfig": {
@@ -289,35 +225,21 @@
     {
       "id": 20,
       "title": "Flame Graph — $pyroscope_app ($profile_type)",
-      "description": "Continuous profiling flame graph. Use the Pyroscope Application and Profile Type dropdowns to switch between servers and profile types. Look for verticle class names (e.g. OrderVerticle, PaymentVerticle) in the stack frames.",
+      "description": "Continuous profiling flame graph. Use the Pyroscope Application and Profile Type dropdowns to switch between services.",
       "type": "flamegraph",
       "datasource": { "type": "grafana-pyroscope-datasource", "uid": "pyroscope-ds" },
-      "gridPos": { "h": 14, "w": 24, "x": 0, "y": 42 },
+      "gridPos": { "h": 14, "w": 24, "x": 0, "y": 41 },
       "targets": [
         {
           "profileTypeId": "$profile_type",
           "labelSelector": "{service_name=\"$pyroscope_app\"}"
         }
       ]
-    },
-    {
-      "id": 21,
-      "title": "Flame Graph — Comparison (other server)",
-      "description": "Shows the other server's flame graph for side-by-side comparison.",
-      "type": "flamegraph",
-      "datasource": { "type": "grafana-pyroscope-datasource", "uid": "pyroscope-ds" },
-      "gridPos": { "h": 14, "w": 24, "x": 0, "y": 56 },
-      "targets": [
-        {
-          "profileTypeId": "$profile_type",
-          "labelSelector": "{service_name=~\"vertx-server-.*\", service_name!=\"$pyroscope_app\"}"
-        }
-      ]
     }
   ],
   "schemaVersion": 39,
-  "tags": ["verticle", "profiling", "comparison", "vertx"],
+  "tags": ["service", "profiling", "comparison", "vertx"],
   "time": { "from": "now-1h", "to": "now" },
-  "title": "Verticle Performance",
+  "title": "Service Performance",
   "uid": "verticle-performance"
 }
