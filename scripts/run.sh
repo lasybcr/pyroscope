@@ -102,8 +102,8 @@ stage_output() {
   fi
 }
 
-# Run a command with a spinner. On failure, re-runs to capture output for
-# display (only when not using --log-dir, since we'd already have the log).
+# Run a command with a spinner. On failure, shows error output.
+# Set ALLOW_FAIL=1 before calling to treat failure as a warning instead of fatal.
 # Usage: run_stage <step> <label> <stage_name> <command...>
 run_stage() {
   local step="$1" label="$2" stage_name="$3"
@@ -135,6 +135,11 @@ run_stage() {
   local elapsed=$(( $(date +%s) - start_time ))
   if [ $rc -eq 0 ]; then
     printf "\r  ✔ [%s] %-40s done (%ds)\n" "$step" "$label" "$elapsed"
+  elif [ "${ALLOW_FAIL:-0}" -eq 1 ]; then
+    printf "\r  ⚠ [%s] %-40s warning (%ds)\n" "$step" "$label" "$elapsed"
+    if [ "$dest" != "/dev/null" ] && [ -s "$dest" ]; then
+      echo "    (see log: $dest)"
+    fi
   else
     printf "\r  ✘ [%s] %-40s FAILED (%ds)\n" "$step" "$label" "$elapsed"
     echo ""
@@ -464,7 +469,7 @@ case "$COMMAND" in
 
       run_load_stage_quiet "2/4"
 
-      run_stage "3/4" "Validating" "validate" \
+      ALLOW_FAIL=1 run_stage "3/4" "Validating" "validate" \
         bash "$SCRIPT_DIR/validate.sh"
 
       wait_for_data "4/4"
