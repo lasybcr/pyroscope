@@ -4,3 +4,6 @@ apps:
   - type: grafana-pyroscope-app
     org_id: 1
     disabled: false
+  - type: grafana-pyroscope-datasource
+    org_id: 1
+    disabled: false
