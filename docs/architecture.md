@@ -141,7 +141,7 @@ flowchart TB
 
 ### Port Assignment
 
-All host ports are configurable via environment variables with defaults in `docker-compose.yml`:
+All host ports are configurable via environment variables with defaults in `docker-compose.yaml`:
 
 | Service | Host Port Variable | Default | Container Port |
 |---------|-------------------|---------|----------------|
@@ -247,7 +247,7 @@ Each Vert.x server container sets `JAVA_TOOL_OPTIONS` with two Java agents:
 -Dpyroscope.log.level=info
 
 # JMX Exporter — JVM metrics as Prometheus endpoint
--javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=9404:/opt/jmx-exporter/config.yml
+-javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=9404:/opt/jmx-exporter/config.yaml
 ```
 
 ### OPTIMIZED Environment Variable
@@ -259,7 +259,7 @@ Toggles between deliberately slow and optimized code paths for before/after flam
 | `true` | Use optimized implementations (iterative fibonacci, ThreadLocal MessageDigest, lock-free processing, primitive arrays, StringBuilder templates) |
 | unset or other | Use original slow implementations (recursive fibonacci, synchronized blocks, per-call getInstance, boxed collections, String.format) |
 
-Set via `docker-compose.fixed.yml` override or `--fixed` flag in `scripts/run.sh`. The default pipeline runs both phases automatically.
+Set via `docker-compose.fixed.yaml` override or `--fixed` flag in `scripts/run.sh`. The default pipeline runs both phases automatically.
 
 ### VERTICLE Environment Variable
 
@@ -279,7 +279,7 @@ Valid names: `main`, `order`, `payment`, `fraud`, `account`, `loan`, `notificati
 | Service | Image | Build | Volumes |
 |---------|-------|-------|---------|
 | pyroscope | `grafana/pyroscope:latest` | — | `pyroscope-data:/data`, `config/pyroscope/pyroscope.yaml` |
-| prometheus | `prom/prometheus:v2.53.0` | — | `prometheus-data:/prometheus`, `config/prometheus/prometheus.yml`, `alerts.yml` |
+| prometheus | `prom/prometheus:v2.53.0` | — | `prometheus-data:/prometheus`, `config/prometheus/prometheus.yaml`, `alerts.yaml` |
 | grafana | `grafana/grafana:11.5.2` | — | `grafana-data:/var/lib/grafana`, provisioning config, dashboard JSONs |
 | vertx-server-1 | — | `./sample-app/Dockerfile` | — |
 | vertx-server-2 | — | `./sample-app/Dockerfile` | — |

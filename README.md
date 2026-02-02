@@ -273,8 +273,8 @@ pyroscope/
 │   ├── grafana/dashboards/         # 5 Grafana dashboards (JSON)
 │   ├── grafana/provisioning/       # Datasources + dashboard provider
 │   ├── prometheus/
-│   │   ├── prometheus.yml          # Scrape config for 7 services
-│   │   └── alerts.yml             # 6 alert rules
+│   │   ├── prometheus.yaml          # Scrape config for 7 services
+│   │   └── alerts.yaml             # 6 alert rules
 │   └── pyroscope/pyroscope.yaml
 ├── docs/                           # Demo guide, runbook, sample queries
 ├── postman/                        # Postman collection + environment
@@ -299,13 +299,13 @@ pyroscope/
 │   ├── generate-load.sh            # Traffic to all 7 services
 │   ├── validate.sh                 # End-to-end automated check
 │   └── teardown.sh
-├── docker-compose.yml              # 10 containers (3 infra + 7 services)
+├── docker-compose.yaml              # 10 containers (3 infra + 7 services)
 └── README.md
 ```
 
 ## How It Works — No Code Changes
 
-The Pyroscope Java agent is attached using `JAVA_TOOL_OPTIONS` in `docker-compose.yml`:
+The Pyroscope Java agent is attached using `JAVA_TOOL_OPTIONS` in `docker-compose.yaml`:
 
 ```yaml
 environment:
@@ -349,7 +349,7 @@ To manually run without profiling:
 
 ```bash
 # Start without Pyroscope agent
-docker compose -f docker-compose.yml -f docker-compose.no-pyroscope.yml up -d
+docker compose -f docker-compose.yaml -f docker-compose.no-pyroscope.yaml up -d
 
 # Start with Pyroscope agent (default)
 docker compose up -d

@@ -277,21 +277,21 @@ print_ready_banner() {
 restart_with_optimized() {
   echo "  Restarting all services with OPTIMIZED=true..."
   cd "$PROJECT_DIR"
-  docker compose -f docker-compose.yml -f docker-compose.fixed.yml up -d --no-deps --build \
-    api-gateway order-service payment-service fraud-service account-service loan-service notification-service
+  docker compose -f docker-compose.yaml -f docker-compose.fixed.yaml up -d --no-deps --build \
+    api-gateway order-service payment-service fraud-service account-service loan-service notification-service stream-service
   wait_for_services
 }
 
 restart_without_optimized() {
   echo "  Restarting all services without optimizations (default)..."
   cd "$PROJECT_DIR"
-  docker compose -f docker-compose.yml up -d --no-deps --build \
-    api-gateway order-service payment-service fraud-service account-service loan-service notification-service
+  docker compose -f docker-compose.yaml up -d --no-deps --build \
+    api-gateway order-service payment-service fraud-service account-service loan-service notification-service stream-service
   wait_for_services
 }
 
 wait_for_services() {
-  for svc in api-gateway order-service payment-service fraud-service account-service loan-service notification-service; do
+  for svc in api-gateway order-service payment-service fraud-service account-service loan-service notification-service stream-service; do
     for _attempt in $(seq 1 30); do
       if docker compose ps "$svc" 2>/dev/null | grep -q "Up"; then
         break
@@ -337,7 +337,7 @@ stage_deploy() {
   echo "===== [$1] Deploying ====="
   echo ""
   if [ "$FIXED" -eq 1 ]; then
-    COMPOSE_EXTRA_FILES="docker-compose.fixed.yml" bash "$SCRIPT_DIR/deploy.sh"
+    COMPOSE_EXTRA_FILES="docker-compose.fixed.yaml" bash "$SCRIPT_DIR/deploy.sh"
   else
     bash "$SCRIPT_DIR/deploy.sh"
   fi
@@ -414,7 +414,7 @@ stage_health() {
 #   all, deploy, teardown, compare, benchmark, optimize, unoptimize
 
 stack_is_running() {
-  docker compose -f "$PROJECT_DIR/docker-compose.yml" ps --status running 2>/dev/null | grep -q "pyroscope" 2>/dev/null
+  docker compose -f "$PROJECT_DIR/docker-compose.yaml" ps --status running 2>/dev/null | grep -q "pyroscope" 2>/dev/null
 }
 
 case "$COMMAND" in
@@ -475,7 +475,7 @@ case "$COMMAND" in
       echo ""
       if [ "$FIXED" -eq 1 ]; then
         run_stage "1/4" "Deploying (optimized)" "deploy" \
-          env COMPOSE_EXTRA_FILES=docker-compose.fixed.yml bash "$SCRIPT_DIR/deploy.sh"
+          env COMPOSE_EXTRA_FILES=docker-compose.fixed.yaml bash "$SCRIPT_DIR/deploy.sh"
       else
         run_stage "1/4" "Deploying" "deploy" \
           bash "$SCRIPT_DIR/deploy.sh"
@@ -607,9 +607,9 @@ case "$COMMAND" in
       | jq -r '.data.yaml // empty' 2>/dev/null) || true
     if [ -n "$PROM_CONFIG" ]; then
       echo "$PROM_CONFIG"
-      echo "$PROM_CONFIG" > "$DUMP_DIR/prometheus.yml"
+      echo "$PROM_CONFIG" > "$DUMP_DIR/prometheus.yaml"
       echo ""
-      echo "  → $DUMP_DIR/prometheus.yml"
+      echo "  → $DUMP_DIR/prometheus.yaml"
     else
       echo "  (Prometheus not reachable at $PROM_URL)"
     fi
@@ -647,7 +647,7 @@ case "$COMMAND" in
     echo "    cp $DUMP_DIR/pyroscope.yaml config/pyroscope/pyroscope.yaml"
     echo ""
     echo "    # Prometheus"
-    echo "    cp $DUMP_DIR/prometheus.yml config/prometheus/prometheus.yml"
+    echo "    cp $DUMP_DIR/prometheus.yaml config/prometheus/prometheus.yaml"
     echo ""
     echo "    # Port assignments"
     echo "    cp $DUMP_DIR/env .env"
@@ -657,7 +657,7 @@ case "$COMMAND" in
     echo ""
     echo "  Or diff against current config:"
     echo "    diff config/pyroscope/pyroscope.yaml $DUMP_DIR/pyroscope.yaml"
-    echo "    diff config/prometheus/prometheus.yml $DUMP_DIR/prometheus.yml"
+    echo "    diff config/prometheus/prometheus.yaml $DUMP_DIR/prometheus.yaml"
     echo ""
     ;;
   *)

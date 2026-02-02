@@ -24,7 +24,7 @@ LO="${LOAN_SERVICE_PORT:-18085}"
 NO="${NOTIFICATION_SERVICE_PORT:-18086}"
 
 # Service definitions (no associative arrays — bash 3.2 compatible)
-SVC_NAMES="api-gateway order-service payment-service fraud-service account-service loan-service notification-service"
+SVC_NAMES="api-gateway order-service payment-service fraud-service account-service loan-service notification-service stream-service"
 SVC_URLS="http://localhost:${GW}/cpu http://localhost:${OR}/order/create http://localhost:${PA}/payment/transfer http://localhost:${FR}/fraud/score http://localhost:${AC}/account/interest http://localhost:${LO}/loan/amortize http://localhost:${NO}/notify/send"
 SVC_HEALTH="http://localhost:${GW}/health http://localhost:${OR}/health http://localhost:${PA}/health http://localhost:${FR}/health http://localhost:${AC}/health http://localhost:${LO}/health http://localhost:${NO}/health"
 
@@ -143,7 +143,7 @@ echo ""
 echo "--- Phase 2: WITHOUT Pyroscope agent ---"
 echo "    Restarting services without profiling..."
 docker compose down -v > /dev/null 2>&1
-docker compose -f docker-compose.yml -f docker-compose.no-pyroscope.yml up -d > /dev/null 2>&1
+docker compose -f docker-compose.yaml -f docker-compose.no-pyroscope.yaml up -d > /dev/null 2>&1
 
 echo "    Waiting for services to start..."
 sleep 20

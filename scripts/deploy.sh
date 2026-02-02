@@ -135,6 +135,7 @@ resolve_port "Fraud Service"         FRAUD_SERVICE_PORT         18083
 resolve_port "Account Service"       ACCOUNT_SERVICE_PORT       18084
 resolve_port "Loan Service"          LOAN_SERVICE_PORT          18085
 resolve_port "Notification Service"  NOTIFICATION_SERVICE_PORT  18086
+resolve_port "Stream Service"       STREAM_SERVICE_PORT        18087
 
 if [ "$CONFLICTS" -gt 0 ]; then
   echo ""
@@ -149,7 +150,7 @@ echo ""
 echo "==> Building and starting all services..."
 cd "$PROJECT_DIR"
 
-COMPOSE_FILES=(-f docker-compose.yml)
+COMPOSE_FILES=(-f docker-compose.yaml)
 if [ -n "${COMPOSE_EXTRA_FILES:-}" ]; then
   for f in $COMPOSE_EXTRA_FILES; do
     COMPOSE_FILES+=(-f "$f")
@@ -161,7 +162,7 @@ docker compose "${COMPOSE_FILES[@]}" up -d
 
 echo ""
 echo "==> Waiting for services to become healthy..."
-for svc in pyroscope prometheus grafana api-gateway order-service payment-service fraud-service account-service loan-service notification-service; do
+for svc in pyroscope prometheus grafana api-gateway order-service payment-service fraud-service account-service loan-service notification-service stream-service; do
   printf "    %-25s" "$svc"
   for attempt in $(seq 1 30); do
     if docker compose ps "$svc" 2>/dev/null | grep -q "Up"; then
@@ -194,5 +195,6 @@ echo "    Fraud Svc:      http://localhost:${FRAUD_SERVICE_PORT}"
 echo "    Account Svc:    http://localhost:${ACCOUNT_SERVICE_PORT}"
 echo "    Loan Svc:       http://localhost:${LOAN_SERVICE_PORT}"
 echo "    Notification:   http://localhost:${NOTIFICATION_SERVICE_PORT}"
+echo "    Stream Svc:     http://localhost:${STREAM_SERVICE_PORT}"
 echo ""
 echo "==> Generate load with:  bash scripts/generate-load.sh"

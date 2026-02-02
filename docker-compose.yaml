@@ -24,8 +24,8 @@ services:
     ports:
       - "${PROMETHEUS_PORT:-9090}:9090"
     volumes:
-      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./config/prometheus/alerts.yml:/etc/prometheus/alerts.yml
+      - ./config/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml
+      - ./config/prometheus/alerts.yaml:/etc/prometheus/alerts.yaml
       - prometheus-data:/prometheus
     networks:
       - monitoring
@@ -78,7 +78,7 @@ services:
         -Dpyroscope.labels.env=production
         -Dpyroscope.labels.service=api-gateway
         -Dpyroscope.log.level=info
-        -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=9404:/opt/jmx-exporter/config.yml
+        -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=9404:/opt/jmx-exporter/config.yaml
     depends_on:
       - pyroscope
     networks:
@@ -105,7 +105,7 @@ services:
         -Dpyroscope.labels.env=production
         -Dpyroscope.labels.service=order-service
         -Dpyroscope.log.level=info
-        -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=9404:/opt/jmx-exporter/config.yml
+        -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=9404:/opt/jmx-exporter/config.yaml
     depends_on:
       - pyroscope
     networks:
@@ -132,7 +132,7 @@ services:
         -Dpyroscope.labels.env=production
         -Dpyroscope.labels.service=payment-service
         -Dpyroscope.log.level=info
-        -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=9404:/opt/jmx-exporter/config.yml
+        -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=9404:/opt/jmx-exporter/config.yaml
     depends_on:
       - pyroscope
     networks:
@@ -159,7 +159,7 @@ services:
         -Dpyroscope.labels.env=production
         -Dpyroscope.labels.service=fraud-service
         -Dpyroscope.log.level=info
-        -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=9404:/opt/jmx-exporter/config.yml
+        -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=9404:/opt/jmx-exporter/config.yaml
     depends_on:
       - pyroscope
     networks:
@@ -186,7 +186,7 @@ services:
         -Dpyroscope.labels.env=production
         -Dpyroscope.labels.service=account-service
         -Dpyroscope.log.level=info
-        -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=9404:/opt/jmx-exporter/config.yml
+        -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=9404:/opt/jmx-exporter/config.yaml
     depends_on:
       - pyroscope
     networks:
@@ -213,7 +213,7 @@ services:
         -Dpyroscope.labels.env=production
         -Dpyroscope.labels.service=loan-service
         -Dpyroscope.log.level=info
-        -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=9404:/opt/jmx-exporter/config.yml
+        -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=9404:/opt/jmx-exporter/config.yaml
     depends_on:
       - pyroscope
     networks:
@@ -240,7 +240,34 @@ services:
         -Dpyroscope.labels.env=production
         -Dpyroscope.labels.service=notification-service
         -Dpyroscope.log.level=info
-        -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=9404:/opt/jmx-exporter/config.yml
+        -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=9404:/opt/jmx-exporter/config.yaml
+    depends_on:
+      - pyroscope
+    networks:
+      - monitoring
+
+  # Stream Processing Service (StreamVerticle)
+  stream-service:
+    build:
+      context: ./sample-app
+      dockerfile: Dockerfile
+    container_name: stream-service
+    ports:
+      - "${STREAM_SERVICE_PORT:-8087}:8080"
+    environment:
+      VERTICLE: stream
+      JAVA_TOOL_OPTIONS: >-
+        -javaagent:/opt/pyroscope/pyroscope.jar
+        -Dpyroscope.application.name=bank-stream-service
+        -Dpyroscope.server.address=http://pyroscope:4040
+        -Dpyroscope.format=jfr
+        -Dpyroscope.profiler.event=itimer
+        -Dpyroscope.profiler.alloc=512k
+        -Dpyroscope.profiler.lock=10ms
+        -Dpyroscope.labels.env=production
+        -Dpyroscope.labels.service=stream-service
+        -Dpyroscope.log.level=info
+        -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=9404:/opt/jmx-exporter/config.yaml
     depends_on:
       - pyroscope
     networks:

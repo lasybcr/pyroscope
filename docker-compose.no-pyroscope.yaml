@@ -1,5 +1,5 @@
 # Override: run bank services WITHOUT the Pyroscope agent.
-# Usage: docker compose -f docker-compose.yml -f docker-compose.no-pyroscope.yml up -d
+# Usage: docker compose -f docker-compose.yaml -f docker-compose.no-pyroscope.yaml up -d
 #
 # This clears JAVA_TOOL_OPTIONS so the -javaagent is not attached.
 # Compare latency/throughput with and without profiling to measure overhead.
@@ -30,5 +30,9 @@ services:
       JAVA_TOOL_OPTIONS: ""
 
   notification-service:
+    environment:
+      JAVA_TOOL_OPTIONS: ""
+
+  stream-service:
     environment:
       JAVA_TOOL_OPTIONS: ""

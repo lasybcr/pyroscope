@@ -142,7 +142,7 @@ curl -s "http://localhost:${PYROSCOPE_PORT:-4040}/pyroscope/render?query=mutex:c
 
 Open `http://localhost:${GRAFANA_PORT}/a/grafana-pyroscope-app/explore` (default port 3000).
 
-The Explore Profiles view provides a dedicated UI for browsing and comparing profiles without building dashboard panels. It requires the `grafana-pyroscope-app` plugin (provisioned automatically via `config/grafana/provisioning/plugins/plugins.yml`).
+The Explore Profiles view provides a dedicated UI for browsing and comparing profiles without building dashboard panels. It requires the `grafana-pyroscope-app` plugin (provisioned automatically via `config/grafana/provisioning/plugins/plugins.yaml`).
 
 If the plugin shows as not installed, clear the Grafana volume and redeploy:
 ```bash

@@ -23,7 +23,7 @@ graph LR
 | **Validate** | `scripts/validate.sh` | Checks infrastructure, services, dashboards, endpoints (36 checks) |
 | **Data Ready** | (built into `run.sh`) | Polls Pyroscope and Prometheus until profile and metric data are confirmed |
 
-Optional stages: `benchmark` (overhead measurement), `teardown` (cleanup), `attach-to-existing-jvm` (external JVM profiling).
+Optional stages: `benchmark` (overhead measurement), `teardown` (cleanup).
 
 ## Running the Pipeline
 
@@ -166,14 +166,6 @@ bash scripts/teardown.sh
 ```
 
 Stops and removes all containers, networks, and volumes.
-
-### Attach to JVM
-
-```bash
-bash scripts/attach-to-existing-jvm.sh
-```
-
-Attaches the Pyroscope agent to an already-running JVM process outside Docker.
 
 ## Configuration
 

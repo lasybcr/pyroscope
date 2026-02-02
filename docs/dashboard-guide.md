@@ -232,8 +232,8 @@ Use this dashboard to verify that performance fixes actually reduced CPU/allocat
 
 The Pyroscope app plugin (`grafana-pyroscope-app`) must be both installed and enabled. This project handles both automatically:
 
-- **Installation:** `GF_INSTALL_PLUGINS=grafana-pyroscope-app` in `docker-compose.yml`
-- **Activation:** `config/grafana/provisioning/plugins/plugins.yml` enables the app on startup
+- **Installation:** `GF_INSTALL_PLUGINS=grafana-pyroscope-app` in `docker-compose.yaml`
+- **Activation:** `config/grafana/provisioning/plugins/plugins.yaml` enables the app on startup
 
 If you still see the error after a fresh deploy, the Grafana volume may be caching old state. Tear down and redeploy:
 

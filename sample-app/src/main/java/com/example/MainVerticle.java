@@ -58,6 +58,9 @@ public class MainVerticle extends AbstractVerticle {
             case "notification":
                 vertx.deployVerticle(new NotificationVerticle(registry));
                 break;
+            case "stream":
+                vertx.deployVerticle(new StreamVerticle(registry));
+                break;
             default:
                 vertx.deployVerticle(new MainVerticle(registry));
                 break;

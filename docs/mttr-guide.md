@@ -204,7 +204,7 @@ Before deploying profiling to production, verify:
 
 - [ ] Profiling overhead < 10% per service (`bash scripts/run.sh benchmark`)
 - [ ] `bottleneck` command works against the running stack
-- [ ] Alert rules are tuned for your SLOs (see `config/prometheus/alerts.yml`)
+- [ ] Alert rules are tuned for your SLOs (see `config/prometheus/alerts.yaml`)
 - [ ] Team knows the 30-second triage workflow (`bottleneck` → flame graph → fix)
 - [ ] Grafana dashboards are bookmarked and accessible during incidents
 - [ ] `diagnose --json` output is integrated with your incident tooling (PagerDuty, Slack, etc.)
@@ -246,7 +246,7 @@ Integrating profiling into CI pipelines to compare performance between builds:
 
 - [ ] **Baseline snapshot script** (`scripts/ci-snapshot.sh`) — after a stable build, query Pyroscope API for per-service top-N function CPU/alloc/mutex shares, save to `baseline/profiles.json`. Commit as the known-good baseline
 - [ ] **Regression gate script** (`scripts/ci-compare.sh`) — in the PR pipeline, deploy the new build, generate load, fetch the same top-N data, diff against baseline. Fail the pipeline if any function's share increased by > threshold (e.g. 20%)
-- [ ] **GitHub Actions workflow** — `.github/workflows/profile-regression.yml` that runs deploy → load → snapshot → compare → upload artifacts
+- [ ] **GitHub Actions workflow** — `.github/workflows/profile-regression.yaml` that runs deploy → load → snapshot → compare → upload artifacts
 - [ ] **Pyroscope diff API** — use `GET /pyroscope/render-diff?leftFrom=T1&leftUntil=T2&rightFrom=T3&rightUntil=T4` for server-side profile diffs without client-side math
 - [ ] **PR comment bot** — post a summary table (service, function, baseline %, current %, delta) as a PR comment when regressions are detected
 - [ ] **Artifact upload** — save flame graph SVGs or JSON diffs as CI artifacts attached to the build for review

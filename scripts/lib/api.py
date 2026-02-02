@@ -30,6 +30,7 @@ SVC_MAP = {
     "account-service": "bank-account-service",
     "loan-service": "bank-loan-service",
     "notification-service": "bank-notification-service",
+    "stream-service": "bank-stream-service",
 }
 
 REVERSE_MAP = {v: k for k, v in SVC_MAP.items()}

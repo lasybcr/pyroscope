@@ -17,10 +17,11 @@ FRAUD="http://localhost:${FRAUD_SERVICE_PORT:-8083}"
 ACCOUNT="http://localhost:${ACCOUNT_SERVICE_PORT:-8084}"
 LOAN="http://localhost:${LOAN_SERVICE_PORT:-8085}"
 NOTIFY="http://localhost:${NOTIFICATION_SERVICE_PORT:-8086}"
+STREAM="http://localhost:${STREAM_SERVICE_PORT:-8087}"
 
 echo "==> Bank Enterprise Load Generator (${DURATION_SECONDS}s)"
 echo "    API Gateway :${API_GATEWAY_PORT:-8080} | Order :${ORDER_SERVICE_PORT:-8081} | Payment :${PAYMENT_SERVICE_PORT:-8082} | Fraud :${FRAUD_SERVICE_PORT:-8083}"
-echo "    Account :${ACCOUNT_SERVICE_PORT:-8084} | Loan :${LOAN_SERVICE_PORT:-8085} | Notification :${NOTIFICATION_SERVICE_PORT:-8086}"
+echo "    Account :${ACCOUNT_SERVICE_PORT:-8084} | Loan :${LOAN_SERVICE_PORT:-8085} | Notification :${NOTIFICATION_SERVICE_PORT:-8086} | Stream :${STREAM_SERVICE_PORT:-8087}"
 echo "    Press Ctrl-C to stop early."
 echo ""
 
@@ -65,6 +66,10 @@ while [ "$(date +%s)" -lt "$END_TIME" ]; do
   # Notification Service
   NEPS=("/notify/send" "/notify/bulk" "/notify/drain" "/notify/render" "/notify/status" "/notify/retry")
   hit "${NOTIFY}${NEPS[$((RANDOM % ${#NEPS[@]}))]}" &
+
+  # Stream Service
+  SEPS=("/stream/transactions" "/stream/windowed-aggregation" "/stream/fanout" "/stream/transform-pipeline" "/stream/backpressure-stress" "/stream/merge-sorted")
+  hit "${STREAM}${SEPS[$((RANDOM % ${#SEPS[@]}))]}" &
 
   wait
   sleep "0.$((RANDOM % 3))"

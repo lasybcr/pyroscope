@@ -18,6 +18,7 @@ dependencies {
     implementation "io.vertx:vertx-core:${vertxVersion}"
     implementation "io.vertx:vertx-web:${vertxVersion}"
     implementation "io.vertx:vertx-micrometer-metrics:${vertxVersion}"
+    implementation "io.vertx:vertx-reactive-streams:${vertxVersion}"
     implementation 'io.micrometer:micrometer-registry-prometheus-simpleclient:1.13.1'
 }
 

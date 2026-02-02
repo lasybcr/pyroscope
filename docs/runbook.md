@@ -607,7 +607,7 @@ bash scripts/run.sh benchmark 500 100
 The benchmark runs three phases:
 
 1. **With agent** — starts all services normally (Pyroscope `-javaagent` attached via `JAVA_TOOL_OPTIONS`), warms up each endpoint, then measures avg/p50/p95/p99 latency and requests/sec.
-2. **Without agent** — restarts all services using `docker-compose.no-pyroscope.yml` (clears `JAVA_TOOL_OPTIONS`), repeats the same measurements.
+2. **Without agent** — restarts all services using `docker-compose.no-pyroscope.yaml` (clears `JAVA_TOOL_OPTIONS`), repeats the same measurements.
 3. **Comparison** — prints overhead percentage per service and saves CSV results to `benchmark-results/`.
 
 ### Reading results
@@ -640,7 +640,7 @@ The Pyroscope JFR agent is designed for production use. Expected ranges with the
 
 If a service shows >10% overhead:
 
-- **Raise the allocation threshold**: change `-Dpyroscope.profiler.alloc=512k` to `1m` or `2m` in `docker-compose.yml`. Higher threshold = fewer allocation samples = less overhead.
+- **Raise the allocation threshold**: change `-Dpyroscope.profiler.alloc=512k` to `1m` or `2m` in `docker-compose.yaml`. Higher threshold = fewer allocation samples = less overhead.
 - **Raise the lock threshold**: change `-Dpyroscope.profiler.lock=10ms` to `50ms`. Captures fewer lock events.
 - **Disable a profile type**: remove `-Dpyroscope.profiler.lock=10ms` or `-Dpyroscope.profiler.alloc=512k` to disable lock or alloc profiling respectively.
 - **Re-run the benchmark** after each change to confirm the reduction.
@@ -701,7 +701,7 @@ done
 | Service | Image | Internal Port | Config |
 |---------|-------|---------------|--------|
 | Pyroscope | grafana/pyroscope:latest | 4040 | `config/pyroscope/pyroscope.yaml` |
-| Prometheus | prom/prometheus:v2.53.0 | 9090 | `config/prometheus/prometheus.yml` |
+| Prometheus | prom/prometheus:v2.53.0 | 9090 | `config/prometheus/prometheus.yaml` |
 | Grafana | grafana/grafana:11.5.2 | 3000 | `config/grafana/provisioning/` |
 | API Gateway | built from `sample-app/` | 8080 | `JAVA_TOOL_OPTIONS` env var |
 | Order Service | built from `sample-app/` | 8081 | Batch processing + synchronized blocks |
@@ -926,7 +926,7 @@ Minimum 8 GB RAM to build and run all services.
 ss -tlnp | grep -E '3000|4040|8080|8081|8082|8083|8084|8085|8086|9090'
 ```
 
-Change port mappings in `docker-compose.yml` or let the deploy script auto-assign via `.env`.
+Change port mappings in `docker-compose.yaml` or let the deploy script auto-assign via `.env`.
 
 ### Container keeps restarting
 
@@ -935,7 +935,7 @@ docker compose ps -a
 docker inspect <container> | grep -i oom
 ```
 
-If OOM-killed, add a memory limit in `docker-compose.yml`:
+If OOM-killed, add a memory limit in `docker-compose.yaml`:
 
 ```yaml
 deploy:

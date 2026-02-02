@@ -3,7 +3,7 @@ global:
   evaluation_interval: 15s
 
 rule_files:
-  - "/etc/prometheus/alerts.yml"
+  - "/etc/prometheus/alerts.yaml"
 
 scrape_configs:
   - job_name: "prometheus"
@@ -45,6 +45,10 @@ scrape_configs:
         labels:
           group: "vertx"
           verticle: "notification"
+      - targets: ["stream-service:8080"]
+        labels:
+          group: "vertx"
+          verticle: "stream"
 
   # JVM metrics via JMX Exporter agent (port 9404) — heap, GC, threads, CPU.
   # Zero code changes: attached as a Java agent via JAVA_TOOL_OPTIONS.
@@ -79,3 +83,7 @@ scrape_configs:
         labels:
           group: "vertx"
           verticle: "notification"
+      - targets: ["stream-service:9404"]
+        labels:
+          group: "vertx"
+          verticle: "stream"
