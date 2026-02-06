@@ -282,29 +282,39 @@ At 3:00am, the anomaly detector fires: `payment-service` lock profiling shows `H
 
 ## Architecture
 
-```
-Pyroscope API ──→ Profile Exporter ──→ Feature Store
-                                            │
-Prometheus API ──→ Metric Exporter ──────→──┤
-                                            │
-Git/Deploy Events ──→ Event Ingester ────→──┤
-                                            ▼
-                                    Anomaly Detector
-                                            │
-                                    ┌───────┴───────┐
-                                    ▼               ▼
-                              Root Cause        Regression
-                              Analyzer          Gate (CI/CD)
-                                    │               │
-                                    ▼               ▼
-                              Incident          PR Comment /
-                              Report            Pipeline Gate
-                                    │
-                                    ▼
-                              Fix Recommender
-                                    │
-                                    ▼
-                              Draft PR / Remediation
+```mermaid
+graph TD
+    subgraph Data Sources
+        PY[Pyroscope API]
+        PM[Prometheus API]
+        GIT[Git / Deploy Events]
+    end
+
+    subgraph Data Pipeline
+        PE[Profile Exporter]
+        ME[Metric Exporter]
+        EI[Event Ingester]
+        FS[(Feature Store)]
+    end
+
+    PY --> PE --> FS
+    PM --> ME --> FS
+    GIT --> EI --> FS
+
+    FS --> AD[Anomaly Detector]
+
+    AD --> RCA[Root Cause Analyzer]
+    AD --> RG[Regression Gate<br/>CI/CD]
+
+    RCA --> IR[Incident Report]
+    RG --> PR[PR Comment /<br/>Pipeline Gate]
+
+    IR --> FR[Fix Recommender]
+    FR --> DPR[Draft PR / Remediation]
+
+    style AD fill:#f59e0b,color:#000
+    style RG fill:#22c55e,color:#fff
+    style DPR fill:#3b82f6,color:#fff
 ```
 
 ---
