@@ -7,8 +7,8 @@
 3. [How It Differs from Metrics, Logs, and Traces](#how-it-differs-from-metrics-logs-and-traces)
 4. [What is Grafana Pyroscope](#what-is-grafana-pyroscope)
 5. [Java-Specific Continuous Profiling](#java-specific-continuous-profiling)
-6. [Comparison to Dynatrace and Other Tools](#comparison-to-dynatrace-and-other-tools)
-7. [Our Deployment: Monolithic VM Mode](#our-deployment-monolithic-vm-mode)
+6. [Comparison to Dynatrace](#comparison-to-dynatrace)
+7. [Deployment Modes](#deployment-modes)
 8. [Improving Incident Response and MTTR](#improving-incident-response-and-mttr)
 9. [Business Value](#business-value)
 10. [Security and Compliance Considerations](#security-and-compliance-considerations)
@@ -22,7 +22,7 @@
 
 When a production service is slow, the standard investigation looks like this:
 
-1. Alert fires: "Payment Service p99 latency > 2s"
+1. Alert fires: "Service 1 p99 latency > 2s"
 2. Check metrics — CPU is high, but which code path?
 3. Check logs — nothing obvious, the service isn't erroring, just slow
 4. Check traces — the span is slow, but the trace shows time spent "in the service," not which function
@@ -116,12 +116,12 @@ graph TB
 
 | Pillar | Question it answers | Granularity | Example |
 |--------|-------------------|-------------|---------|
-| **Metrics** | Is something wrong? | Service-level counters and gauges | "CPU is at 95% on payment-service" |
+| **Metrics** | Is something wrong? | Service-level counters and gauges | "CPU is at 95% on Service 1" |
 | **Logs** | What happened? | Individual events with text | "ERROR: Timeout connecting to database" |
-| **Traces** | Where is time spent across services? | Per-request call chain | "200ms in payment-service, 50ms in fraud-service" |
-| **Profiles** | Why is this specific code slow? | Per-function CPU/memory/lock usage | "PaymentVerticle.computeHash() takes 73% of CPU due to SHA-256 in a loop" |
+| **Traces** | Where is time spent across services? | Per-request call chain | "200ms in Service 1, 50ms in Service 2" |
+| **Profiles** | Why is this specific code slow? | Per-function CPU/memory/lock usage | "computeHash() takes 73% of CPU due to SHA-256 in a loop" |
 
-Without profiling, you know the payment service is slow (metrics) and the request spent 200ms there (traces), but not whether it's the hash computation, the database query, or the serialization. With profiling, you open the flame graph and see which function.
+Without profiling, you know the service is slow (metrics) and the request spent 200ms there (traces), but not whether it's the hash computation, the database query, or the serialization. With profiling, you open the flame graph and see which function.
 
 ---
 
@@ -132,9 +132,9 @@ Grafana Pyroscope is an open-source continuous profiling database. It stores pro
 ```mermaid
 graph TB
     subgraph Your Applications
-        APP1[Payment Service<br/>Java]
-        APP2[Fraud Service<br/>Java]
-        APP3[Order Service<br/>Java]
+        APP1[Service 1<br/>Java]
+        APP2[Service 2<br/>Java]
+        APP3[Service 3<br/>Java]
     end
 
     subgraph Pyroscope
@@ -217,7 +217,7 @@ The profiler is attached via an environment variable. No application code, no de
 environment:
   JAVA_TOOL_OPTIONS: >-
     -javaagent:/opt/pyroscope/pyroscope.jar
-    -Dpyroscope.application.name=bank-payment-service
+    -Dpyroscope.application.name=app-service-1
     -Dpyroscope.server.address=http://pyroscope:4040
     -Dpyroscope.format=jfr
     -Dpyroscope.profiler.event=itimer
@@ -233,32 +233,13 @@ No code change or rebuild needed — set the environment variable and restart.
 |-----|---------|-------|
 | OpenJDK 8+ | Full | Most common in enterprise |
 | Oracle JDK 8+ | Full | Same internals as OpenJDK |
-| Eclipse Temurin 11+ | Full | What we use |
+| Eclipse Temurin 11+ | Full | Adoptium distribution of OpenJDK |
 | GraalVM | Partial | CPU profiling works, allocation profiling limited |
 | IBM J9 / Semeru | Limited | Different JVM internals, some profile types unavailable |
 
 ---
 
-## Comparison to Dynatrace and Other Tools
-
-### Feature comparison
-
-| Capability | **Pyroscope** | **Dynatrace** | **Datadog Profiler** | **New Relic** | **Amazon CodeGuru** | **YourKit / JProfiler** |
-|-----------|:------------:|:-------------:|:-------------------:|:------------:|:------------------:|:---------------------:|
-| Continuous profiling | Yes | Yes | Yes | Limited | Yes (Java only) | No (manual attach) |
-| CPU profiling | Yes | Yes | Yes | Yes | Yes | Yes |
-| Memory/allocation profiling | Yes | Yes | Yes | No | Yes | Yes |
-| Lock/contention profiling | Yes | Yes | Yes | No | No | Yes |
-| Wall clock profiling | Yes | Yes | Yes | No | No | Yes |
-| Flame graph diff (compare two time ranges) | Yes | Yes | Yes | No | Yes | No |
-| Zero-code attachment (Java) | Yes | Yes | Yes | Yes | Yes | No |
-| Grafana integration | Native | Plugin | No (own UI) | No (own UI) | No (AWS Console) | No |
-| Multi-language | Java, Go, Python, .NET, Ruby, Node, Rust, eBPF | Java, .NET, Go, Node, PHP | Java, Go, Python, .NET, Ruby, Node, PHP | Java, Go, .NET | Java, Python | Java only |
-| On-premises deployment | Yes | Yes | No (SaaS only) | No (SaaS only) | No (AWS only) | N/A (desktop tool) |
-| Open source | Yes (AGPLv3) | No | No | No | No | No |
-| Cost | Free | ~$50-70/host/month | ~$31/host/month | ~$25/host/month | ~$0.75/sampling hour | ~$600/license |
-
-### When to choose each
+## Comparison to Dynatrace
 
 **Choose Pyroscope when:**
 - You need on-premises deployment (air-gapped, regulated, private cloud)
@@ -274,24 +255,7 @@ No code change or rebuild needed — set the environment variable and restart.
 - You need automatic instrumentation discovery (Dynatrace OneAgent auto-detects services)
 - Budget is available — Dynatrace is premium priced but reduces operational burden
 
-**Choose Datadog Continuous Profiler when:**
-- You're already a Datadog customer (metrics, APM, logs all in Datadog)
-- You run on public cloud and SaaS is acceptable
-- You want profiling correlated with distributed traces in the same UI
-
-**Choose Amazon CodeGuru when:**
-- You're all-in on AWS and want native integration
-- You only need Java or Python profiling
-- You want automated code recommendations (CodeGuru also reviews your code for bugs)
-
-**Choose YourKit / JProfiler when:**
-- You need deep, interactive profiling during development or in staging
-- You're debugging a specific issue and need method-level stepping, object inspection, or memory leak analysis
-- You do not need production or continuous profiling
-
-### Dynatrace vs Pyroscope — deep comparison for bank context
-
-This is the most common comparison for enterprise Java shops:
+### Dynatrace vs Pyroscope — deep comparison
 
 | Dimension | Pyroscope | Dynatrace |
 |-----------|-----------|-----------|
@@ -305,60 +269,81 @@ This is the most common comparison for enterprise Java shops:
 | **Vendor lock-in** | None — open source, standard data formats | High — proprietary agent, API, and data format |
 | **PCI/SOX compliance** | You own the audit trail | Dynatrace provides compliance certifications for their cloud |
 
-In practice: shops with existing Dynatrace contracts keep using Dynatrace. Teams building a new stack, running on-prem, or watching costs go with Pyroscope + Grafana.
+In practice: teams with existing Dynatrace contracts keep using Dynatrace. Teams building a new stack, running on-prem, or watching costs go with Pyroscope + Grafana.
 
 ---
 
-## Our Deployment: Monolithic VM Mode
+## Deployment Modes
 
-We run Pyroscope in monolithic (single-process) mode on a VM. This is the simplest deployment — a single Pyroscope container handles ingestion, storage, and querying.
+Pyroscope supports two deployment modes. Use monolithic mode for development, POC, and evaluation. Plan on microservices mode for production.
+
+### Monolithic mode (dev / POC / evaluation)
+
+A single Pyroscope process handles ingestion, storage, and querying. This is the fastest way to get running and evaluate the tool. The diagram below shows how Pyroscope integrates with an existing Grafana and Prometheus deployment:
 
 ```mermaid
 graph TB
-    subgraph Bank Network
-        subgraph Application VMs
-            S1[Payment Service<br/>Java + Pyroscope Agent]
-            S2[Fraud Service<br/>Java + Pyroscope Agent]
-            S3[Order Service<br/>Java + Pyroscope Agent]
-            S4[Account Service<br/>Java + Pyroscope Agent]
-            S5[... 5 more services]
+    subgraph Enterprise Network
+        subgraph Application Servers
+            S1[Service 1<br/>Java + Pyroscope Agent]
+            S2[Service 2<br/>Java + Pyroscope Agent]
+            S3[Service 3<br/>Java + Pyroscope Agent]
         end
 
         subgraph Pyroscope VM
-            PY[Pyroscope Server<br/>all-in-one :4040]
+            PY[Pyroscope Server<br/>:4040]
             FS[("/data<br/>local filesystem")]
             PY --> FS
         end
 
-        subgraph Monitoring VM
-            GF[Grafana :3000]
-            PR[Prometheus :9090]
+        subgraph Existing Monitoring
+            GF[Grafana :3000<br/>already deployed]
+            PR[Prometheus :9090<br/>already deployed]
         end
     end
 
     S1 -->|push profiles| PY
     S2 -->|push profiles| PY
     S3 -->|push profiles| PY
-    S4 -->|push profiles| PY
-    S5 -->|push profiles| PY
 
-    GF -->|query profiles| PY
-    GF -->|query metrics| PR
+    GF -->|query profiles<br/>new datasource| PY
+    GF -->|query metrics<br/>existing| PR
     PR -->|scrape /metrics| S1
     PR -->|scrape /metrics| S2
 ```
 
-### Why monolithic mode
+### Microservices mode (production)
+
+For production workloads, Pyroscope's components (distributor, ingester, compactor, store-gateway, query-frontend, query-scheduler, querier, overrides-exporter, and optional ruler) run as separate processes with shared object storage. This provides high availability, horizontal scalability, and independent scaling of read and write paths. See `deploy/microservices/README.md` for the full production deployment guide.
+
+### Choosing a mode
 
 | Factor | Monolithic | Microservices |
 |--------|-----------|---------------|
+| Purpose | Dev, POC, evaluation | Production |
 | Services profiled | Up to ~50 | 50+ or high-throughput |
 | Ingestion rate | < 100 MB/s | Hundreds of MB/s |
 | Availability | Single point of failure | Highly available |
 | Operational complexity | Minimal — one process | Higher — 9 services, shared storage |
-| Suitable for | Dev, staging, small-to-medium production | Large-scale production |
 
-For our current fleet size, monolithic mode works and is simpler to run. If we outgrow it, the microservices deployment (documented in the repo) splits the same components across multiple processes.
+Start with monolithic mode to evaluate Pyroscope and validate the integration. When moving to production, deploy in microservices mode for high availability and scalability.
+
+### Integration steps
+
+1. **Deploy Pyroscope server on a VM** — use the scripts in `deploy/monolithic/` for dev/POC
+2. **Download the Pyroscope Java agent JAR** — from the [Grafana Pyroscope releases](https://github.com/grafana/pyroscope-java/releases)
+3. **Include the agent JAR in your build/deployment artifact** — add the JAR to your application image or deployment package so it is available at a known path (e.g., `/opt/pyroscope/pyroscope.jar`)
+4. **Add the agent to your application startup command** — set `-javaagent:/opt/pyroscope/pyroscope.jar` and the required system properties in `JAVA_TOOL_OPTIONS` or your launch script:
+   ```
+   -javaagent:/opt/pyroscope/pyroscope.jar
+   -Dpyroscope.application.name=app-service-1
+   -Dpyroscope.server.address=http://<pyroscope-host>:4040
+   -Dpyroscope.format=jfr
+   -Dpyroscope.profiler.event=itimer
+   -Dpyroscope.profiler.alloc=512k
+   -Dpyroscope.profiler.lock=10ms
+   ```
+5. **Add Pyroscope as a data source in Grafana** — point Grafana at `http://<pyroscope-host>:4040` and use the built-in flame graph panel
 
 ### Storage sizing
 
@@ -428,16 +413,16 @@ No "add logging" step. The agent was running the whole time. Query the incident'
 
 ### Concrete example
 
-**Scenario**: Payment service p99 spikes from 200ms to 3s every day around 2pm.
+**Scenario**: A service's p99 spikes from 200ms to 3s every day around 2pm.
 
 **Without profiling** (3 days to resolve):
 - Day 1: Notice the pattern in metrics. Add timing logs around the main code paths. Redeploy.
-- Day 2: Logs show time is spent in `processPayroll()` but not which part. Add more granular logging inside that method. Redeploy.
-- Day 3: Finally see that `computeHash()` is called 500 times per payroll batch, each doing `MessageDigest.getInstance("SHA-256")` which is expensive. Fix: cache the MessageDigest instance.
+- Day 2: Logs show time is spent in `processBatch()` but not which part. Add more granular logging inside that method. Redeploy.
+- Day 3: Finally see that `computeHash()` is called 500 times per batch, each doing `MessageDigest.getInstance("SHA-256")` which is expensive. Fix: cache the MessageDigest instance.
 
 **With profiling** (15 minutes to resolve):
-- Open Grafana, filter to payment-service, CPU profile, 1:50pm-2:10pm today
-- Flame graph shows `processPayroll()` → `computeHash()` → `MessageDigest.getInstance()` consuming 73% of CPU
+- Open Grafana, filter to the affected service, CPU profile, 1:50pm-2:10pm today
+- Flame graph shows `processBatch()` → `computeHash()` → `MessageDigest.getInstance()` consuming 73% of CPU
 - Fix: cache the MessageDigest instance
 
 Same root cause, same fix. 3 days vs 15 minutes.
@@ -459,7 +444,7 @@ Same root cause, same fix. 3 days vs 15 minutes.
 
 Profiling shows where CPU cycles go, so you can optimize code instead of adding pods:
 
-- "Payment service needs 8 pods" → profile shows 60% of CPU in an unoptimized hash function → fix it → 3 pods is enough
+- "The service needs 8 pods" → profile shows 60% of CPU in an unoptimized hash function → fix it → 3 pods is enough
 - "We need bigger instances for the loan service" → profile shows Monte Carlo sim allocates too many temp objects → reduce allocations → same instance size works
 
 ### Risk reduction
@@ -478,7 +463,7 @@ Profiling shows where CPU cycles go, so you can optimize code instead of adding 
 | **Does the profiler see application data?** | No. It captures function names and call stacks only — it does not inspect variables, method arguments, or return values. No PII, no credentials, no customer data. |
 | **What data is sent to the Pyroscope server?** | Stack traces (function names), sample counts, and labels (service name, environment). Not business data. |
 | **Does it affect application behavior?** | No. Sampling is passive — it reads the call stack, it does not modify execution. The agent does not inject bytecode or alter class loading (unlike some APM agents). |
-| **Network communication** | Agent pushes data to Pyroscope over HTTP. Can be configured for HTTPS. All traffic stays within the bank network (no external calls). |
+| **Network communication** | Agent pushes data to Pyroscope over HTTP. Can be configured for HTTPS. All traffic stays within the enterprise network (no external calls). |
 | **Data at rest** | Profile data is stored on the Pyroscope server's filesystem. Encryption at rest depends on the underlying storage (encrypted NFS, encrypted EBS, etc.). |
 | **Access control** | Grafana's role-based access control governs who can view flame graphs. Pyroscope itself does not have built-in auth — it relies on network-level access control or a reverse proxy. |
 | **Overhead** | < 1% CPU, negligible memory. Benchmarked with our services — see the `benchmark.sh` script in the repo. |
