@@ -796,20 +796,16 @@ These items need input from reviewers before this RFC can be approved.
 
 ## Next Steps
 
-For hands-on setup, deployment scripts, and operational runbooks, refer to the project repository:
+If this RFC is approved, the following actions are typical for most enterprise environments:
 
-| What you need | Where to find it |
-|--------------|-----------------|
-| Run the full demo stack locally | [Repository README](https://github.com/aff0gat000/pyroscope/blob/main/README.md) — Quick Start section |
-| Understand the service architecture | [docs/architecture.md](https://github.com/aff0gat000/pyroscope/blob/main/docs/architecture.md) |
-| Step-by-step demo for stakeholders | [docs/demo-runbook.md](https://github.com/aff0gat000/pyroscope/blob/main/docs/demo-runbook.md) |
-| Hands-on profiling investigation scenarios | [docs/profiling-scenarios.md](https://github.com/aff0gat000/pyroscope/blob/main/docs/profiling-scenarios.md) |
-| Source code to flame graph mapping | [docs/code-to-profiling-guide.md](https://github.com/aff0gat000/pyroscope/blob/main/docs/code-to-profiling-guide.md) |
-| Grafana dashboard reference | [docs/dashboard-guide.md](https://github.com/aff0gat000/pyroscope/blob/main/docs/dashboard-guide.md) |
-| Deploy Pyroscope server to a VM | [deploy/monolithic/README.md](https://github.com/aff0gat000/pyroscope/blob/main/deploy/monolithic/README.md) |
-| Deploy Pyroscope microservices (NFS) | [deploy/microservices/README.md](https://github.com/aff0gat000/pyroscope/blob/main/deploy/microservices/README.md) |
-| Incident management playbooks | [docs/runbook.md](https://github.com/aff0gat000/pyroscope/blob/main/docs/runbook.md) |
-| MTTR reduction workflow | [docs/mttr-guide.md](https://github.com/aff0gat000/pyroscope/blob/main/docs/mttr-guide.md) |
+1. **Resolve open questions** — gather input from reviewers on retention policy, security review for `SYS_PTRACE`, and infrastructure budget for production deployment
+2. **Provision infrastructure** — stand up a Pyroscope server (VM or container) in a non-production environment; add it as a Grafana datasource
+3. **Select pilot services** — identify 2-3 non-critical services with known performance characteristics to serve as a baseline; prefer services that have had recent performance incidents
+4. **Attach the agent** — add the Pyroscope Java agent to pilot services with CPU profiling only; monitor for 1 week to confirm no latency impact
+5. **Validate the workflow** — use the pilot to walk through a real or simulated investigation: find a function in a flame graph, correlate with metrics, confirm the workflow improvement
+6. **Train the team** — run a hands-on session covering flame graph reading, diff views, and label-based filtering; typical ramp-up is 1-2 hours
+7. **Expand and iterate** — enable additional profile types (allocation, lock, wall clock), onboard additional teams, and begin collecting MTTR data per the success criteria
+8. **Plan production deployment** — evaluate when to migrate from monolithic to microservices mode based on ingestion volume and availability requirements
 
 ---
 
