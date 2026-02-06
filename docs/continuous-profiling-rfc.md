@@ -61,9 +61,9 @@ We recommend **Grafana Pyroscope** specifically: it's open source, Grafana-nativ
 ```mermaid
 graph TB
     subgraph Your Applications
-        APP1[Service 1<br/>Java]
-        APP2[Service 2<br/>Java]
-        APP3[Service 3<br/>Java]
+        APP1[Service 1]
+        APP2[Service 2]
+        APP3[Service 3]
     end
 
     subgraph Pyroscope
@@ -103,6 +103,93 @@ graph TB
 - Label-based querying: filter by service, environment, version, custom labels
 - Grafana-native: flame graph panel type, Pyroscope datasource plugin
 - Low overhead: < 1% CPU (async-profiler for Java)
+
+---
+
+## Runtime Impact Analysis
+
+The biggest objection to always-on profiling is production risk. This section breaks down exactly what the profiler does at runtime, what it costs, and how it compares to Dynatrace's agent model.
+
+### How async-profiler works at the OS level
+
+Pyroscope's Java agent wraps async-profiler, which uses **OS-level sampling** rather than bytecode instrumentation. It does not modify your application code, class loading, or JIT compilation.
+
+```mermaid
+graph LR
+    subgraph "What async-profiler does"
+        A["Linux kernel sends<br/>SIGPROF every 10ms"] --> B["Agent reads current<br/>call stack (AsyncGetCallTrace)"]
+        B --> C["Appends to native<br/>ring buffer"]
+    end
+
+    subgraph "What async-profiler does NOT do"
+        X["❌ Modify bytecode"]
+        Y["❌ Inject code at method entry/exit"]
+        Z["❌ Capture method arguments or return values"]
+    end
+```
+
+The profiler is a passive observer. It asks "what is the JVM doing right now?" at regular intervals and records the answer. It never changes what the JVM is doing.
+
+### Overhead by profile type
+
+Each profile type has a different collection mechanism and overhead profile. These can be enabled independently.
+
+| Profile Type | Mechanism | CPU Overhead | Memory | Latency Impact | Notes |
+|---|---|---|---|---|---|
+| **CPU** (`itimer`) | SIGPROF signal every 10ms, reads call stack via `AsyncGetCallTrace` | < 1% | Negligible | Not measurable at p99 | No safepoint bias — captures true on-CPU activity |
+| **Allocation** (`alloc`) | TLAB event sampling at configurable threshold | < 1% at 512KB threshold | Negligible | Not measurable at p99 | Higher allocation rates increase overhead slightly; threshold controls it |
+| **Lock** (`lock`) | Contention event sampling above threshold | < 0.5% | Negligible | Not measurable at p99 | Only fires for lock waits exceeding threshold (default 10ms) |
+| **Wall clock** (`wall`) | Periodic sampling of all threads including waiting | < 1% | Negligible | Not measurable at p99 | Useful for I/O-bound services where CPU profiling misses the picture |
+| **All four combined** | All of the above | **1-3% total** | **~30-50 MB native** (ring buffers, not Java heap) | **Not measurable at p99** | This is the worst-case scenario with every profile type enabled |
+
+### Agent resource footprint
+
+| Resource | Pyroscope Java Agent |
+|---|---|
+| CPU overhead | 1-3% with all profile types enabled |
+| Java heap impact | None — async-profiler is native code, does not allocate Java objects |
+| Native memory | ~30-50 MB for ring buffers and accumulated samples |
+| Network egress | ~1-5 KB/s per service (compressed protobuf, pushed every 10s) |
+| Disk I/O | None on the application host (data is pushed to Pyroscope server) |
+| Open file descriptors | 2-3 (perf event FDs + server connection) |
+| Threads | 1 background thread for collection and shipping |
+
+### What happens if the Pyroscope server goes down
+
+The agent is designed to be non-disruptive:
+
+- Profiles accumulate in the local buffer for a short window
+- If the server is unreachable, the agent **silently drops data** — no retries that consume resources, no disk buffering
+- The application is completely unaffected — no exceptions, no latency increase, no log noise
+- When the server comes back, profiling resumes automatically
+
+### Runtime comparison: Pyroscope vs Dynatrace
+
+This is the critical difference. Pyroscope and Dynatrace take fundamentally different approaches to collecting data at runtime.
+
+| Dimension | Pyroscope (async-profiler) | Dynatrace (OneAgent) |
+|---|---|---|
+| **Instrumentation method** | OS-level signal sampling — reads the call stack, never modifies code | Bytecode instrumentation — rewrites classes at load time to inject monitoring hooks |
+| **Code modification** | None. No bytecode changes, no class retransformation | Yes. Injects code at method entry/exit points to capture timing, arguments, and return values |
+| **Impact on JIT compilation** | None. JVM compiles your code normally | Instrumented methods have different bytecode, which changes JIT optimization decisions |
+| **Impact on class loading** | None | Adds a class transformer that modifies classes during loading — increases startup time |
+| **CPU overhead** | 1-3% (all profile types) | 2-5% baseline (varies with instrumentation depth and transaction volume) |
+| **Memory overhead** | ~30-50 MB native memory | Agent process: 200-500+ MB; application heap increase from injected instrumentation |
+| **Data captured** | Function names and call stacks only — no application data | Method arguments, return values, SQL statements, HTTP headers — captures application data |
+| **Failure mode** | Agent silently drops data, application unaffected | Agent restart can trigger class retransformation; in rare cases, instrumentation conflicts cause `ClassFormatError` or `VerifyError` |
+| **Startup impact** | Negligible — agent attaches and begins sampling | Measurable — OneAgent transforms classes during loading, adding seconds to startup |
+| **JVM compatibility risk** | Low — uses supported `AsyncGetCallTrace` API | Moderate — bytecode manipulation can conflict with other agents (e.g., APM + security agents on the same JVM) |
+
+### Why this matters for production workloads
+
+Dynatrace's bytecode instrumentation is the root cause of its production risk profile. By rewriting classes at load time and injecting monitoring code at method entry and exit points, OneAgent fundamentally changes what the JVM executes. This has well-known consequences:
+
+- **GC pressure increases** — instrumented methods create additional objects for timing and context propagation, increasing allocation rates and GC frequency
+- **JIT unpredictability** — the JVM's JIT compiler optimizes different bytecode differently; injected instrumentation can prevent inlining and other optimizations that the original code would have received
+- **Agent update disruption** — OneAgent updates trigger class retransformation, which can cause latency spikes as the JVM re-loads and re-JITs affected classes during production traffic
+- **Cascading failures** — in rare but documented cases, bytecode conflicts between Dynatrace and other Java agents (security agents, other APM tools) produce `ClassFormatError` or `VerifyError` exceptions that crash the application
+
+Pyroscope avoids all of these problems by design. Sampling-based profiling never modifies application code — it is a read-only observer. There is no mechanism by which the profiler can alter application behavior, degrade JIT optimization, or conflict with other agents. This is the same approach used by Google-Wide Profiling, Meta's fleet-wide profiling infrastructure, and Netflix — all running at scales far beyond typical enterprise workloads, all choosing sampling over instrumentation precisely because production stability is non-negotiable.
 
 ---
 
@@ -184,21 +271,23 @@ Same root cause, same fix. 3 days vs 15 minutes.
 
 ---
 
-## Comparison to Dynatrace
+## Why Pyroscope over Dynatrace
 
-**Choose Pyroscope when:**
-- You need on-premises deployment (air-gapped, regulated, private cloud)
-- You already use the Grafana stack (Prometheus, Loki, Tempo)
-- You want flame graphs next to metrics and traces in the same Grafana dashboard
-- Budget is constrained — it's free and open source
-- You need to keep profiling data on your own infrastructure (data sovereignty)
+Dynatrace is the incumbent in many enterprise environments, so this comparison comes up immediately. While Dynatrace is a capable platform, its agent model carries well-documented production risks that make Pyroscope the stronger choice for continuous profiling specifically.
 
-**Choose Dynatrace when:**
-- You want a fully managed, all-in-one observability platform
-- You need automatic root cause analysis powered by Dynatrace's AI (Davis)
-- Your organization already has a Dynatrace license
-- You need automatic instrumentation discovery (Dynatrace OneAgent auto-detects services)
-- Budget is available — Dynatrace is premium priced but reduces operational burden
+**Why we recommend Pyroscope:**
+- **No production risk from bytecode instrumentation** — Dynatrace OneAgent rewrites application bytecode at class load time, which has a documented history of causing performance degradation, increased GC pressure, and in edge cases `ClassFormatError` or `VerifyError` exceptions. Pyroscope's sampling-based approach never touches application code.
+- **Predictable, minimal overhead** — Pyroscope's 1-3% CPU overhead is consistent and well-understood. Dynatrace overhead varies with instrumentation depth and transaction volume, and can spike during agent updates or class retransformation events.
+- **On-premises deployment** — air-gapped, regulated, private cloud environments fully supported
+- **Grafana-native** — flame graphs render alongside existing Prometheus metrics and Tempo traces in the same dashboards, no separate UI
+- **No vendor lock-in** — open source, standard data formats, no proprietary agent
+- **No cost for the software** — infrastructure costs only, compared to ~$5,000-7,000/month for Dynatrace at 100 hosts
+- **Data sovereignty** — profiling data stays on your infrastructure, under your control
+
+**Dynatrace's strengths (and why they don't outweigh the risks for profiling):**
+- Dynatrace offers automated root cause analysis (Davis AI) and auto-discovery of services — valuable features, but they come packaged with the same bytecode instrumentation agent that introduces production risk
+- Organizations with existing Dynatrace contracts often keep it for distributed tracing and APM, but add Pyroscope specifically for continuous profiling because the overhead model is fundamentally safer
+- Dynatrace's managed/SaaS model reduces operational burden, but at the cost of data residency control and significant licensing fees
 
 ### Dynatrace vs Pyroscope — deep comparison
 
@@ -214,7 +303,7 @@ Same root cause, same fix. 3 days vs 15 minutes.
 | **Vendor lock-in** | None — open source, standard data formats | High — proprietary agent, API, and data format |
 | **PCI/SOX compliance** | You own the audit trail | Dynatrace provides compliance certifications for their cloud |
 
-In practice: teams with existing Dynatrace contracts keep using Dynatrace. Teams building a new stack, running on-prem, or watching costs go with Pyroscope + Grafana.
+In practice: teams with existing Dynatrace contracts often keep Dynatrace for APM and distributed tracing, but deploy Pyroscope alongside it specifically for continuous profiling — getting the function-level visibility without adding more bytecode instrumentation risk to production.
 
 ---
 
@@ -259,7 +348,7 @@ graph TB
 
 ### Microservices mode (production)
 
-For production workloads, Pyroscope's components (distributor, ingester, compactor, store-gateway, query-frontend, query-scheduler, querier, overrides-exporter, and optional ruler) run as separate processes with shared object storage. This provides high availability, horizontal scalability, and independent scaling of read and write paths. See `deploy/microservices/README.md` for the full production deployment guide.
+For production workloads, Pyroscope's components (distributor, ingester, compactor, store-gateway, query-frontend, query-scheduler, querier, overrides-exporter, and optional ruler) run as separate processes with shared object storage. This provides high availability, horizontal scalability, and independent scaling of read and write paths. See [deploy/microservices/README.md](https://github.com/aff0gat000/pyroscope/blob/main/deploy/microservices/README.md) for the full production deployment guide.
 
 ### Choosing a mode
 
@@ -275,7 +364,7 @@ Start with monolithic mode to evaluate Pyroscope and validate the integration. W
 
 ### Integration steps
 
-1. **Deploy Pyroscope server on a VM** — use the scripts in `deploy/monolithic/` for dev/POC
+1. **Deploy Pyroscope server on a VM** — use the scripts in [deploy/monolithic/](https://github.com/aff0gat000/pyroscope/tree/main/deploy/monolithic) for dev/POC
 2. **Upload the Pyroscope Java agent JAR to Artifactory** — download from [Grafana Pyroscope releases](https://github.com/grafana/pyroscope-java/releases) and publish to your internal artifact repository so builds can pull it without external access
 3. **Update the Docker image** — add a `COPY` or dependency-fetch step in the Dockerfile to include the agent JAR at a known path (e.g., `/opt/pyroscope/pyroscope.jar`). Alternatively, mount the JAR into the container via a Docker volume at runtime.
 4. **Add the agent to your application startup command** — set `-javaagent:/opt/pyroscope/pyroscope.jar` and the required system properties in `JAVA_TOOL_OPTIONS` or your entrypoint:
@@ -406,7 +495,7 @@ Profiling shows where CPU cycles go, so you can optimize code instead of adding 
 | **Network communication** | Agent pushes data to Pyroscope over HTTP. Can be configured for HTTPS. All traffic stays within the enterprise network (no external calls). |
 | **Data at rest** | Profile data is stored on the Pyroscope server's filesystem. Encryption at rest depends on the underlying storage (encrypted NFS, encrypted EBS, etc.). |
 | **Access control** | Grafana's role-based access control governs who can view flame graphs. Pyroscope itself does not have built-in auth — it relies on network-level access control or a reverse proxy. |
-| **Overhead** | < 1% CPU, negligible memory. Benchmarked with our services — see the `benchmark.sh` script in the repo. |
+| **Overhead** | < 1% CPU, negligible memory. Benchmarked with our services — see the [benchmark.sh](https://github.com/aff0gat000/pyroscope/blob/main/benchmark.sh) script in the repo. |
 
 ---
 
@@ -433,16 +522,16 @@ For hands-on setup, deployment scripts, and operational runbooks, refer to the p
 
 | What you need | Where to find it |
 |--------------|-----------------|
-| Run the full demo stack locally | Repository README — Quick Start section |
-| Understand the service architecture | `docs/architecture.md` |
-| Step-by-step demo for stakeholders | `docs/demo-runbook.md` |
-| Hands-on profiling investigation scenarios | `docs/profiling-scenarios.md` |
-| Source code to flame graph mapping | `docs/code-to-profiling-guide.md` |
-| Grafana dashboard reference | `docs/dashboard-guide.md` |
-| Deploy Pyroscope server to a VM | `deploy/monolithic/README.md` |
-| Deploy Pyroscope microservices (NFS) | `deploy/microservices/README.md` |
-| Incident management playbooks | `docs/runbook.md` |
-| MTTR reduction workflow | `docs/mttr-guide.md` |
+| Run the full demo stack locally | [Repository README](https://github.com/aff0gat000/pyroscope/blob/main/README.md) — Quick Start section |
+| Understand the service architecture | [docs/architecture.md](https://github.com/aff0gat000/pyroscope/blob/main/docs/architecture.md) |
+| Step-by-step demo for stakeholders | [docs/demo-runbook.md](https://github.com/aff0gat000/pyroscope/blob/main/docs/demo-runbook.md) |
+| Hands-on profiling investigation scenarios | [docs/profiling-scenarios.md](https://github.com/aff0gat000/pyroscope/blob/main/docs/profiling-scenarios.md) |
+| Source code to flame graph mapping | [docs/code-to-profiling-guide.md](https://github.com/aff0gat000/pyroscope/blob/main/docs/code-to-profiling-guide.md) |
+| Grafana dashboard reference | [docs/dashboard-guide.md](https://github.com/aff0gat000/pyroscope/blob/main/docs/dashboard-guide.md) |
+| Deploy Pyroscope server to a VM | [deploy/monolithic/README.md](https://github.com/aff0gat000/pyroscope/blob/main/deploy/monolithic/README.md) |
+| Deploy Pyroscope microservices (NFS) | [deploy/microservices/README.md](https://github.com/aff0gat000/pyroscope/blob/main/deploy/microservices/README.md) |
+| Incident management playbooks | [docs/runbook.md](https://github.com/aff0gat000/pyroscope/blob/main/docs/runbook.md) |
+| MTTR reduction workflow | [docs/mttr-guide.md](https://github.com/aff0gat000/pyroscope/blob/main/docs/mttr-guide.md) |
 
 ---
 
