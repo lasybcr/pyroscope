@@ -1,21 +1,5 @@
 # Continuous Profiling with Grafana Pyroscope — Engineering Primer
 
-## Table of Contents
-
-1. [What Problem Does This Solve](#what-problem-does-this-solve)
-2. [What is Continuous Profiling](#what-is-continuous-profiling)
-3. [How It Differs from Metrics, Logs, and Traces](#how-it-differs-from-metrics-logs-and-traces)
-4. [What is Grafana Pyroscope](#what-is-grafana-pyroscope)
-5. [Java-Specific Continuous Profiling](#java-specific-continuous-profiling)
-6. [Comparison to Dynatrace](#comparison-to-dynatrace)
-7. [Deployment Modes](#deployment-modes)
-8. [Improving Incident Response and MTTR](#improving-incident-response-and-mttr)
-9. [Business Value](#business-value)
-10. [Security and Compliance Considerations](#security-and-compliance-considerations)
-11. [Limitations and Trade-offs](#limitations-and-trade-offs)
-12. [Getting Started](#getting-started)
-13. [Glossary](#glossary)
-
 ---
 
 ## What Problem Does This Solve
