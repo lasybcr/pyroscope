@@ -331,9 +331,9 @@ Start with monolithic mode to evaluate Pyroscope and validate the integration. W
 ### Integration steps
 
 1. **Deploy Pyroscope server on a VM** — use the scripts in `deploy/monolithic/` for dev/POC
-2. **Download the Pyroscope Java agent JAR** — from the [Grafana Pyroscope releases](https://github.com/grafana/pyroscope-java/releases)
-3. **Include the agent JAR in your build/deployment artifact** — add the JAR to your application image or deployment package so it is available at a known path (e.g., `/opt/pyroscope/pyroscope.jar`)
-4. **Add the agent to your application startup command** — set `-javaagent:/opt/pyroscope/pyroscope.jar` and the required system properties in `JAVA_TOOL_OPTIONS` or your launch script:
+2. **Upload the Pyroscope Java agent JAR to Artifactory** — download from [Grafana Pyroscope releases](https://github.com/grafana/pyroscope-java/releases) and publish to your internal artifact repository so builds can pull it without external access
+3. **Update the Docker image** — add a `COPY` or dependency-fetch step in the Dockerfile to include the agent JAR at a known path (e.g., `/opt/pyroscope/pyroscope.jar`). Alternatively, mount the JAR into the container via a Docker volume at runtime.
+4. **Add the agent to your application startup command** — set `-javaagent:/opt/pyroscope/pyroscope.jar` and the required system properties in `JAVA_TOOL_OPTIONS` or your entrypoint:
    ```
    -javaagent:/opt/pyroscope/pyroscope.jar
    -Dpyroscope.application.name=app-service-1
